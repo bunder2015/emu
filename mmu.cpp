@@ -20,7 +20,7 @@ int rom_ingest(char* romfile) {
         rombuffer = new char[filesize];     // rombuffer holds the file while we read the header and prepare the memory map
         rf.read(rombuffer, filesize);       // read file to rombuffer
         rf.close();                         // close file
-        return 0; /// segfault here (unknown)
+        return 0;
     } else {
         cout << "ERROR: File could not be read!\n";
         return 1;
@@ -31,7 +31,6 @@ int rom_headerparse() {
 // TODO (chris#9#): consider adding pre iNES ROM support
     static const char headermagic[4] = { 0x4E, 0x45, 0x53, 0x1A };  // "N", "E", "S", 0x1A
 
-    /// or segfault here (rombuffer null)
     if (memcmp(rombuffer, headermagic, sizeof(headermagic)) == 0) { // compare header magic bytes
 // TODO (chris#1#): verify iNES v1 vs v2, break down header elements to choose memory mapper and prepare CPU/PPU memory map
         return 0;
