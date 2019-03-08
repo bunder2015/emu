@@ -1,4 +1,4 @@
-#include "rom.h"
+#include "rom.h"        // for rom_ingest rom_headerparse
 
 char* rombuffer;        // in memory copy of the entire ROM file
 
