@@ -41,14 +41,10 @@ int rom_headerparse() {
 }
 
 int mmu_init(char* romfile) {
-    if (rom_ingest(romfile) == 0) {
-        if (rom_headerparse() == 0) {
+    if (rom_ingest(romfile) == 0 && rom_headerparse() == 0) {
 // TODO (chris#2#): something after headerparse
-            return 0;
-        } else {
-            return 1;   // rom_headerparse failed
-        }
+        return 0;
     } else {
-        return 1;   // rom_ingest failed
+        return 1;   // rom_ingest or rom_headerparse failed
     }
 }
