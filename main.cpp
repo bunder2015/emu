@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
     if (mmu_init(romfile) == 0) { // load ROM file and initialize memory map
 // TODO (chris#6#): CPU/APU/PPU
     } else {
-        return 1;
+        return 1;   // mmu_init failed
     }
 
     // end
