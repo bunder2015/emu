@@ -5,17 +5,17 @@
 using std::cout;
 using std::ifstream;
 
-char* rombuffer;        // in memory copy of the entire rom file
+char* rombuffer;        // in memory copy of the entire ROM file
 
 int rom_ingest(char* romfile) {
-    ifstream rf;
-    unsigned long filesize;
+    ifstream rf;                // handler for ROM file opening
+    unsigned long filesize;     // size of ROM file
 
     rf.open(romfile, ifstream::binary);     // open file
 
     if (rf.good()) {
         rf.seekg(0, ifstream::end);         // go to end of file
-        filesize = rf.tellg();              // read length
+        filesize = rf.tellg();              // read size of ROM file
         rf.seekg(0, ifstream::beg);         // go back to beginning of file
         rombuffer = new char[filesize];     // rombuffer holds the file while we read the header and prepare the memory map
         rf.read(rombuffer, filesize);       // read file to rombuffer
@@ -43,14 +43,12 @@ int rom_headerparse() {
 int mmu_init(char* romfile) {
     if (rom_ingest(romfile) == 0) {
         if (rom_headerparse() == 0) {
-            // something after headerparse
+// TODO (chris#2#): something after headerparse
             return 0;
         } else {
-            // rom_headerparse failed
-            return 1;
+            return 1;   // rom_headerparse failed
         }
     } else {
-        // rom_ingest failed
-        return 1;
+        return 1;   // rom_ingest failed
     }
 }
