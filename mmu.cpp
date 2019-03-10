@@ -1,9 +1,9 @@
-#include "rom.h"
-
-char* rombuffer;        // in memory copy of the entire ROM file
+#include "rom.h"    // for rom_ingest rom_headerparse
 
 int mmu_init(char* romfile) {
-    if (rom_ingest(romfile, rombuffer) == 0 && rom_headerparse(rombuffer) == 0) {
+    char* rombuffer;     // in memory copy of the entire ROM file
+
+    if (rom_ingest(romfile, &rombuffer) == 0 && rom_headerparse(&rombuffer) == 0) {
 // TODO (chris#2#): something after headerparse
         return 0;
     } else {
