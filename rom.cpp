@@ -87,9 +87,9 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
                 *fourscreenmode = 1;                            // we are four screen mirroring
                 if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {    // if byte 6, bit 1 is 1
                     *mirrormode = 1;                            // this bit usually does nothing when in four screen
-                    cout << "INFO: Four screen mirroring (vertical bit also present)";
+                    cout << "INFO: Four screen mirroring (vertical bit also present)\n";
                 } else {
-                    cout << "INFO: Four screen mirroring (vertical bit not present)";
+                    cout << "INFO: Four screen mirroring (vertical bit not present)\n";
                 }
             } else if ((*(*rombuffer + 0x06) & 0x01) == 0x01) { // if byte 6, bit 1 is 1
                 *mirrormode = 1;                                // we are vertical mirroring
