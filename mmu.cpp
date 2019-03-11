@@ -7,11 +7,14 @@ int mmu_init(char* romfile) {
     int mirrormode = 0;     // horizontal/vertical mirroring toggle
     int prgrampresence = 0; // PRG RAM presence toggle
     int fourscreenmode = 0; // four-screen mirroring toggle
+    int prgramsize = 0;     // PRG RAM size (in multiples of 8kb << 1)
+    int tvsystem = 0;       // TV system (NTSC/PAL)
     int mapper = 0;         // iNES mapper number
 
     if (rom_ingest(romfile, &rombuffer) == 0                            // Load the ROM into memory
             && rom_headerparse(&rombuffer, &prgromsize, &chrromsize,    // and parse the header
-                               &mirrormode, &prgrampresence, &fourscreenmode) == 0) {
+                               &mirrormode, &prgrampresence, &fourscreenmode,
+                               &prgramsize, &tvsystem) == 0) {
 // TODO (chris#5#): something after headerparse
         return 0;
     } else {

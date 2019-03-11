@@ -28,7 +28,9 @@ int rom_ingest(char* romfile, char** rombuffer) {
 }
 
 int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
-                    int* mirrormode, int* prgrampresence, int* fourscreenmode) {
+                    int* mirrormode, int* prgrampresence, int* fourscreenmode,
+                    int* prgramsize, int* tvsystem) {
+
     int inesformat = 0;
 // TODO (chris#9#): consider adding "archiac" iNES ROM support
     if (memcmp(*rombuffer, headermagic, sizeof(headermagic)) == 0) {    // compare header magic bytes
@@ -49,6 +51,18 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
         } else if (inesformat == 1) {
             cout << "INFO: iNES format 1\n";
 
+            // stop right now if we see something we don't like
+            if ((*(*rombuffer + 0x07) & 0x01) == 0x01) {        // if byte 7 bit 1 is 1
+                cout << "ERROR: We do not support VS ROMs\n";   // this is a VS System ROM
+                return 1;
+            } else if ((*(*rombuffer + 0x07) & 0x02) == 0x02) { // if byte 7 bit 2 is 1
+                cout << "ERROR: We do not support PC10 ROMs\n"; // this is a PlayChoice 10 ROM
+                return 1;
+            } else if ((*(*rombuffer + 0x06) & 0x04) == 0x04) { // if byte 6, bit 4 is 1
+                cout << "ERROR: We do not support trainers\n";  // we have a trainer which unmodified ROMs do not have
+                return 1;
+            }
+
             *prgromsize = (*(*rombuffer + 0x04) & 0xFF);        // PRG ROM is byte 4 * 16k in size
             cout << "INFO: PRG ROM size: " << *prgromsize * 16384 << " bytes total\n";
 
@@ -57,34 +71,40 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
                 cout << "INFO: CHR ROM size: " << *chrromsize * 8192 << " bytes total\n";
             } else {
                 cout << "INFO: No CHR ROM, CHR RAM instead\n";
-// TODO (chris#2#): CHR RAM
+// TODO (chris#3#): CHR RAM?
             }
 
-            if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {        // if byte 6, bit 1 is 1
+            if ((*(*rombuffer + 0x06) & 0x02) == 0x02) {        // if byte 6, bit 2 is 1
+                *prgrampresence = 1;                            // we have a PRG RAM
+                cout << "INFO: PRG RAM present\n";
+                *prgramsize = ((*(*rombuffer + 0x08) & 0xFF));  // PRG RAM is byte 8 * 8kb in size
+                cout << "INFO: PRG RAM size: " << *prgramsize * 8192 << " bytes total\n";
+            } else {
+                cout << "INFO: No PRG RAM present\n";
+            }
+
+            if ((*(*rombuffer + 0x06) & 0x08) == 0x08) {        // if byte 6, bit 8 is 1
+                *fourscreenmode = 1;                            // we are four screen mirroring
+                if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {    // if byte 6, bit 1 is 1
+                    *mirrormode = 1;                            // this bit usually does nothing when in four screen
+                    cout << "INFO: Four screen mirroring (vertical bit also present)";
+                } else {
+                    cout << "INFO: Four screen mirroring (vertical bit not present)";
+                }
+            } else if ((*(*rombuffer + 0x06) & 0x01) == 0x01) { // if byte 6, bit 1 is 1
                 *mirrormode = 1;                                // we are vertical mirroring
                 cout << "INFO: Vertical mirroring\n";
             } else {
                 cout << "INFO: Horizontal mirroring\n";
             }
 
-            if ((*(*rombuffer + 0x06) & 0x02) == 0x02) {        // if byte 6 bit 2 is 1
-                *prgrampresence = 1;                            // we have a PRG RAM
-                cout << "INFO: PRG RAM present\n";
+            if ((*(*rombuffer + 0x09) & 0x01) == 0x01) {        // if byte 9 bit 1 is 1
+                *tvsystem = 1;                                  // we are PAL
+                cout << "INFO: TV system: PAL\n";               // NESdev claims this is spec "but nobody uses it"
             } else {
-                cout << "INFO: No PRG RAM present\n";
+                cout << "INFO: TV system: NTSC\n";
             }
-
-            if ((*(*rombuffer + 0x06) & 0x04) == 0x04) {        // if byte 6 bit 4 is 1
-                cout << "ERROR: We do not support trainers\n";  // we have a trainer which unmodified ROMs do not have
-                return 1;
-            }
-
-            if ((*(*rombuffer + 0x06) & 0x08) == 0x08) {        // if byte 6 bit 8 is 1
-                *fourscreenmode = 1;                            // we are actually four screen mirroring
-                cout << "INFO: Four screen mirroring\n";
-            }
-// TODO (chris#1#): more iNES v1 more header elements
-
+// TODO (chris#1#): more iNES v1 more header elements - mapper bits, reserved bits of byte 9, byte 10
             return 0;
         } else {
             cout << "ERROR: Not an iNES 0.7/1.0 or 2.0 file! (valid magic, format trashed)\n";
