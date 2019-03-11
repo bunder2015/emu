@@ -5,6 +5,6 @@ const char headermagic[4] = { 0x4E, 0x45, 0x53, 0x1A }; // "N", "E", "S", 0x1A
 
 int rom_ingest(char* romfile, char** rombuffer);
 int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
-                    int* mirrormode, int* prgrampresence);
+                    int* mirrormode, int* prgrampresence, int* fourscreenmode);
 
 #endif // ROM_H_INCLUDED

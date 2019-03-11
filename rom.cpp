@@ -28,7 +28,7 @@ int rom_ingest(char* romfile, char** rombuffer) {
 }
 
 int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
-                    int* mirrormode, int* prgrampresence) {
+                    int* mirrormode, int* prgrampresence, int* fourscreenmode) {
     int inesformat = 0;
 // TODO (chris#9#): consider adding "archiac" iNES ROM support
     if (memcmp(*rombuffer, headermagic, sizeof(headermagic)) == 0) {    // compare header magic bytes
@@ -72,6 +72,16 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
                 cout << "INFO: PRG RAM present\n";
             } else {
                 cout << "INFO: No PRG RAM present\n";
+            }
+
+            if ((*(*rombuffer + 0x06) & 0x04) == 0x04) {        // if byte 6 bit 4 is 1
+                cout << "ERROR: We do not support trainers\n";  // we have a trainer which unmodified ROMs do not have
+                return 1;
+            }
+
+            if ((*(*rombuffer + 0x06) & 0x08) == 0x08) {        // if byte 6 bit 8 is 1
+                *fourscreenmode = 1;                            // we are actually four screen mirroring
+                cout << "INFO: Four screen mirroring\n";
             }
 // TODO (chris#1#): more iNES v1 more header elements
 
