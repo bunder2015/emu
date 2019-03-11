@@ -27,7 +27,7 @@ int rom_ingest(char* romfile, char** rombuffer) {
     }
 }
 
-int rom_headerparse(char** rombuffer) {
+int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize) {
     int inesformat = 0;
 // TODO (chris#9#): consider adding "archiac" iNES ROM support
     if (memcmp(*rombuffer, headermagic, sizeof(headermagic)) == 0) {    // compare header magic bytes
@@ -42,9 +42,23 @@ int rom_headerparse(char** rombuffer) {
         }
 // TODO (chris#1#): break down header elements to choose memory mapper and prepare CPU/PPU memory map
         if (inesformat == 2) {
+            cout << "INFO: iNES format 2\n";
 
             return 0;
         } else if (inesformat == 1) {
+            cout << "INFO: iNES format 1\n";
+
+            *prgromsize = (*(*rombuffer + 0x04) & 0xFF);        // PRG ROM is byte 4 * 16k in size
+            cout << "INFO: PRG ROM size: " << *prgromsize * 16384 << " bytes total\n";
+
+            if ((*(*rombuffer + 0x05) & 0xFF) > 0) {
+                *chrromsize = (*(*rombuffer + 0x05) & 0xFF);    // CHR ROM is byte 5 * 8k in size
+                cout << "INFO: CHR ROM size: " << *chrromsize * 8192 << " bytes total\n";
+            } else {
+                cout << "INFO: no CHR ROM\n";
+// TODO (chris#2#): CHR RAM
+            }
+// TODO (chris#1#): more iNES v1 more header elements
 
             return 0;
         } else {
