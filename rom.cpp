@@ -39,12 +39,18 @@ int rom_headerparse(char** rombuffer) {
                    && ((*(*rombuffer + 0x0E) & 0xFF) == 0x00)
                    && ((*(*rombuffer + 0x0F) & 0xFF) == 0x00)) {
             inesformat = 1;                                     // we are iNES format 0.7 or 1.0
+        }
+// TODO (chris#1#): break down header elements to choose memory mapper and prepare CPU/PPU memory map
+        if (inesformat == 2) {
+
+            return 0;
+        } else if (inesformat == 1) {
+
+            return 0;
         } else {
             cout << "ERROR: Not an iNES 0.7/1.0 or 2.0 file! (valid magic, format trashed)\n";
             return 1;
         }
-// TODO (chris#1#): break down header elements to choose memory mapper and prepare CPU/PPU memory map
-        return 0;
     } else {
         cout << "ERROR: Not an iNES file! (invalid magic)\n";
         return 1;
