@@ -27,7 +27,8 @@ int rom_ingest(char* romfile, char** rombuffer) {
     }
 }
 
-int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize) {
+int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
+                    int* mirrormode, int* prgrampresence) {
     int inesformat = 0;
 // TODO (chris#9#): consider adding "archiac" iNES ROM support
     if (memcmp(*rombuffer, headermagic, sizeof(headermagic)) == 0) {    // compare header magic bytes
@@ -43,7 +44,7 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize) {
 // TODO (chris#1#): break down header elements to choose memory mapper and prepare CPU/PPU memory map
         if (inesformat == 2) {
             cout << "INFO: iNES format 2\n";
-
+// TODO (chris#4#): iNES v2 headers
             return 0;
         } else if (inesformat == 1) {
             cout << "INFO: iNES format 1\n";
@@ -55,8 +56,22 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize) {
                 *chrromsize = (*(*rombuffer + 0x05) & 0xFF);    // CHR ROM is byte 5 * 8k in size
                 cout << "INFO: CHR ROM size: " << *chrromsize * 8192 << " bytes total\n";
             } else {
-                cout << "INFO: no CHR ROM\n";
+                cout << "INFO: No CHR ROM, CHR RAM instead\n";
 // TODO (chris#2#): CHR RAM
+            }
+
+            if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {        // if byte 6, bit 1 is 1
+                *mirrormode = 1;                                // we are vertical mirroring
+                cout << "INFO: Vertical mirroring\n";
+            } else {
+                cout << "INFO: Horizontal mirroring\n";
+            }
+
+            if ((*(*rombuffer + 0x06) & 0x02) == 0x02) {        // if byte 6 bit 2 is 1
+                *prgrampresence = 1;                            // we have a PRG RAM
+                cout << "INFO: PRG RAM present\n";
+            } else {
+                cout << "INFO: No PRG RAM present\n";
             }
 // TODO (chris#1#): more iNES v1 more header elements
 
