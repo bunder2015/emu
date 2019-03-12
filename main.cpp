@@ -7,17 +7,17 @@ using std::cout;
 int main(int argc, char* argv[]) {
     char* romfile;          // ROM filename for input
 
-    if (argc < 2) {         // argument count check
+    if (argc < 2) {         // Argument count check
         cout << "ERROR: ROM filename not given.\n";
         return 1;
     } else if (argc > 2) {
         cout << "ERROR: Too many arguments.\n";
         return 1;
     } else {
-        romfile = argv[1];  // try to load this as a ROM file
+        romfile = argv[1];  // Try to load this as a ROM file
     }
 
-    if (mmu_init(romfile) == 0) { // load ROM file and initialize memory map
+    if (mmu_init(romfile) == 0) {   // Load ROM file and initialize memory map
 // TODO (chris#6#): CPU/APU/PPU
     } else {
         return 1;   // mmu_init failed

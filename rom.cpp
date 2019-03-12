@@ -8,18 +8,18 @@ using std::cout;
 using std::ifstream;
 
 int rom_ingest(char* romfile, char** rombuffer) {
-    ifstream rf;                // handler for ROM file opening
-    unsigned long filesize;     // size of ROM file
+    ifstream rf;                // Handle for ROM file opening
+    unsigned long filesize;     // Size of ROM file
 
-    rf.open(romfile, ifstream::binary);     // open file
+    rf.open(romfile, ifstream::binary);     // Open file
 
     if (rf.good()) {
-        rf.seekg(0, ifstream::end);         // go to end of file
-        filesize = rf.tellg();              // read size of ROM file
-        rf.seekg(0, ifstream::beg);         // go back to beginning of file
+        rf.seekg(0, ifstream::end);         // Go to end of file
+        filesize = rf.tellg();              // Read size of ROM file
+        rf.seekg(0, ifstream::beg);         // Go back to beginning of file
         *rombuffer = new char[filesize];    // rombuffer holds the file while we read the header and prepare the memory map
-        rf.read(*rombuffer, filesize);      // read file to rombuffer
-        rf.close();                         // close file
+        rf.read(*rombuffer, filesize);      // Read file to rombuffer
+        rf.close();                         // Close file
         return 0;
     } else {
         cout << "ERROR: File could not be read!\n";
@@ -33,10 +33,10 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
 
     int inesformat = 0;
 // TODO (chris#9#): consider adding "archiac" iNES ROM support
-    if (memcmp(*rombuffer, headermagic, sizeof(headermagic)) == 0) {    // compare header magic bytes
-        if ((*(*rombuffer + 0x07) & 0x0C) == 0x08) {            // if byte 7, bits 8 and 4, are (1,0)
+    if (memcmp(*rombuffer, headermagic, sizeof(headermagic)) == 0) {    // Compare header magic bytes
+        if ((*(*rombuffer + 0x07) & 0x0C) == 0x08) {            // If byte 7, bits 8 and 4, are (1,0)
             inesformat = 2;                                     // we are iNES format 2.0
-        } else if (((*(*rombuffer + 0x07) & 0x0C) == 0x00)      // if byte 7, bits 8 and 4, are (0,0)
+        } else if (((*(*rombuffer + 0x07) & 0x0C) == 0x00)      // If byte 7, bits 8 and 4, are (0,0)
                    && ((*(*rombuffer + 0x0C) & 0xFF) == 0x00)   // and bytes 12-15 are 0
                    && ((*(*rombuffer + 0x0D) & 0xFF) == 0x00)
                    && ((*(*rombuffer + 0x0E) & 0xFF) == 0x00)
@@ -51,17 +51,17 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
         } else if (inesformat == 1) {
             cout << "INFO: iNES format 1\n";
 
-            // stop right now if we see something we don't like
-            if ((*(*rombuffer + 0x07) & 0x01) == 0x01) {            // if byte 7 bit 1 is 1
+            // Stop right now if we see something we don't like
+            if ((*(*rombuffer + 0x07) & 0x01) == 0x01) {            // If byte 7 bit 1 is 1
                 cout << "ERROR: VS ROMs are not supported\n";       // this is a VS System ROM
                 return 1;
-            } else if ((*(*rombuffer + 0x07) & 0x02) == 0x02) {     // if byte 7 bit 2 is 1
+            } else if ((*(*rombuffer + 0x07) & 0x02) == 0x02) {     // If byte 7 bit 2 is 1
                 cout << "ERROR: PC10 ROMs are not supported\n";     // this is a PlayChoice 10 ROM
                 return 1;
-            } else if ((*(*rombuffer + 0x06) & 0x04) == 0x04) {     // if byte 6, bit 4 is 1
+            } else if ((*(*rombuffer + 0x06) & 0x04) == 0x04) {     // If byte 6, bit 4 is 1
                 cout << "ERROR: Trainers are not supported\n";      // we have a trainer which unmodified ROMs do not have
                 return 1;
-            } else if (((*(*rombuffer + 0x09) & 0x02) == 0x02)      // if byte 9, bits 2 through 128, are 1
+            } else if (((*(*rombuffer + 0x09) & 0x02) == 0x02)      // If byte 9, bits 2 through 128, are 1
                        || ((*(*rombuffer + 0x09) & 0x04) == 0x04)   // then file might be corrupted
                        || ((*(*rombuffer + 0x09) & 0x08) == 0x08)   // or empty spaces in the header
                        || ((*(*rombuffer + 0x09) & 0x08) == 0x08)   // are used incorrectly
@@ -81,11 +81,14 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
                 cout << "INFO: CHR ROM size: " << *chrromsize * 8192 << " bytes total\n";
             } else {
                 cout << "INFO: No CHR ROM present\n";
-// TODO (chris#3#): CHR RAM?
-                return 1;
+                /* TODO (chris#3#): Upon analysis of various ROMs it would appear that
+                *  if they contain CHR RAM instead of a CHR ROM, the game has 8kb
+                *  for this purpose
+                */
+                //return 1;
             }
 
-            if ((*(*rombuffer + 0x06) & 0x02) == 0x02) {        // if byte 6, bit 2 is 1
+            if ((*(*rombuffer + 0x06) & 0x02) == 0x02) {        // If byte 6, bit 2 is 1
                 *prgrampresence = 1;                            // we have a PRG RAM
                 cout << "INFO: PRG RAM present\n";
                 /* FIXME (chris#8#): Upon analysis of various ROMs it would appear that
@@ -95,37 +98,38 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
                 *   RacerMate Challenge II (unlicensed): 2 * 32kb
                 *   Romance of the Three Kingdoms II: 32kb
                 */
-                *prgramsize = (*(*rombuffer + 0x08) & 0xFF);    // PRG RAM is byte 8 * 8kb in size
-                if ((*prgrampresence == 1) && (*prgramsize == 0)) { // Fudge the numbers, see fixme
-                    *prgramsize = 1;
+                *prgramsize = (*(*rombuffer + 0x08) & 0xFF);            // PRG RAM is byte 8 * 8kb in size
+                if ((*prgrampresence == 1) && (*prgramsize == 0)) {     // If we have PRG RAM but don't specify size
+                    *prgramsize = 1;                                    // fudge the numbers, see fixme above
                 }
                 cout << "INFO: PRG RAM size: " << *prgramsize * 8192 << " bytes total\n";
             } else {
                 cout << "INFO: No PRG RAM present\n";
             }
 
-            if ((*(*rombuffer + 0x06) & 0x08) == 0x08) {        // if byte 6, bit 8 is 1
-                *fourscreenmode = 1;                            // we are four screen mirroring
-                if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {    // if byte 6, bit 1 is 1
+            if ((*(*rombuffer + 0x06) & 0x08) == 0x08) {        // If byte 6, bit 8 is 1
+                *fourscreenmode = 1;                            // we are four screen mirroring (Gauntlet, Rad Racer II)
+                if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {    // If byte 6, bit 1 is 1
                     *mirrormode = 1;                            // this bit usually does nothing when in four screen
                     cout << "INFO: Four screen mirroring (vertical bit also present)\n";
                 } else {
                     cout << "INFO: Four screen mirroring (vertical bit not present)\n";
                 }
-            } else if ((*(*rombuffer + 0x06) & 0x01) == 0x01) { // if byte 6, bit 1 is 1
+// TODO (chris#1#): Check for mappers before checking V/H mirroring as the mapper can override mirror bits in header
+            } else if ((*(*rombuffer + 0x06) & 0x01) == 0x01) { // If byte 6, bit 1 is 1
                 *mirrormode = 1;                                // we are vertical mirroring
                 cout << "INFO: Vertical mirroring\n";
             } else {
                 cout << "INFO: Horizontal mirroring\n";
             }
 
-            if ((*(*rombuffer + 0x09) & 0x01) == 0x01) {        // if byte 9 bit 1 is 1
+            if ((*(*rombuffer + 0x09) & 0x01) == 0x01) {        // If byte 9 bit 1 is 1
                 *tvsystem = 1;                                  // we are PAL
                 cout << "INFO: TV system: PAL\n";               // NESdev claims this is spec "but nobody uses it"
             } else {
                 cout << "INFO: TV system: NTSC\n";
             }
-// TODO (chris#1#): more iNES v1 more header elements - mapper bits, byte 10, unused(?) byte 11
+// TODO (chris#1#): More iNES v1 more header elements - mapper bits, byte 10, unused(?) byte 11
             return 0;
         } else {
             cout << "ERROR: Not an iNES 0.7/1.0 or 2.0 file! (valid magic, format trashed)\n";

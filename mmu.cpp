@@ -1,12 +1,12 @@
 #include "rom.h"    // for rom_ingest rom_headerparse
 
 int mmu_init(char* romfile) {
-    char* rombuffer;        // in memory copy of the entire ROM file
-    int prgromsize = 0;     // size of PRG ROM (in multiples of 16kb)
-    int chrromsize = 0;     // size of CHR ROM (in multiples of 8kb)
-    int mirrormode = 0;     // horizontal/vertical mirroring toggle
+    char* rombuffer;        // In memory copy of the entire ROM file
+    int prgromsize = 0;     // Size of PRG ROM (in multiples of 16kb)
+    int chrromsize = 0;     // Size of CHR ROM (in multiples of 8kb)
+    int mirrormode = 0;     // Horizontal/Vertical mirroring toggle
     int prgrampresence = 0; // PRG RAM presence toggle
-    int fourscreenmode = 0; // four-screen mirroring toggle
+    int fourscreenmode = 0; // Four screen mirroring toggle
     int prgramsize = 0;     // PRG RAM size (in multiples of 8kb << 1)
     int tvsystem = 0;       // TV system (NTSC/PAL)
     int mapper = 0;         // iNES mapper number
