@@ -83,7 +83,9 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
                 cout << "INFO: No CHR ROM present\n";
                 /* TODO (chris#3#): Upon analysis of various ROMs it would appear that
                 *  if they contain CHR RAM instead of a CHR ROM, the game has 8kb
-                *  for this purpose
+                *  for this purpose with the exception of:
+                *   Gauntlet: 2kb
+                *   RacerMate Challenge II (unlicensed): 2 * 32kb
                 */
                 //return 1;
             }
@@ -94,8 +96,6 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* chrromsize,
                 /* FIXME (chris#8#): Upon analysis of various ROMs it would appear that
                 *  all of them lie about their PRG RAM size.  All games that have PRG RAM
                 *  have 8kb with the exception of:
-                *   Gauntlet: 2kb
-                *   RacerMate Challenge II (unlicensed): 2 * 32kb
                 *   Romance of the Three Kingdoms II: 32kb
                 */
                 *prgramsize = (*(*rombuffer + 0x08) & 0xFF);            // PRG RAM is byte 8 * 8kb in size
