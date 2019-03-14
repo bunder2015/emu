@@ -61,17 +61,10 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             } else if ((*(*rombuffer + 0x06) & 0x04) == 0x04) {     // If byte 6, bit 4 is 1
                 cout << "ERROR: Trainers are not supported\n";      // we have a trainer which unmodified ROMs do not have
                 return 1;
-            } else if (((*(*rombuffer + 0x09) & 0x02) == 0x02)      // If byte 9, bits 2 through 128, are 1
-                       || ((*(*rombuffer + 0x09) & 0x04) == 0x04)   // then file might be corrupted
-                       || ((*(*rombuffer + 0x09) & 0x08) == 0x08)   // or empty spaces in the header
-                       || ((*(*rombuffer + 0x09) & 0x08) == 0x08)   // are used incorrectly
-                       || ((*(*rombuffer + 0x09) & 0x10) == 0x10)
-                       || ((*(*rombuffer + 0x09) & 0x20) == 0x20)
-                       || ((*(*rombuffer + 0x09) & 0x40) == 0x40)
-                       || ((*(*rombuffer + 0x09) & 0x80) == 0x80)) {
+            } else if ((*(*rombuffer + 0x09) & 0xFE) > 1) {         // If byte 9, bits 2 through 128, are 1
                 cout << "ERROR: Header byte 9 reserved bits are not zero\n";
                 return 1;
-            } else if ((*(*rombuffer + 0x0B) & 0xFF) > 0) {
+            } else if ((*(*rombuffer + 0x0B) & 0xFF) > 0) {         // If byte 11 is set at all
                 cout << "ERROR: Unused header byte 11 is not zero\n";
                 return 1;
             }
@@ -97,7 +90,7 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             }
 
             if ((*(*rombuffer + 0x06) & 0x02) == 0x02) {        // If byte 6, bit 2 is 1
-                *batterypresence = 1;                            // we have a battery
+                *batterypresence = 1;                           // we have a battery
                 cout << "INFO: Battery backed PRG RAM present\n";
             }
             /* TODO (chris#8#): Upon analysis of various ROMs it would appear that
@@ -115,7 +108,7 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             *   Romance of the Three Kingdoms II: 32kb
             *  On second thought, we could always just fix the ROMs
             */
-            *prgramsize = (*(*rombuffer + 0x08) & 0xFF);            // PRG RAM is byte 8 * 8kb in size
+            *prgramsize = (*(*rombuffer + 0x08) & 0xFF);        // PRG RAM is byte 8 * 8kb in size
             if (*prgramsize > 0) {
                 cout << "INFO: PRG RAM size: " << *prgramsize * 8192 << " bytes total\n";
             } else {
