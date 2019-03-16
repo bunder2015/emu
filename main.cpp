@@ -1,17 +1,17 @@
-#include <iostream>     // for std::cout
+#include <iostream>     // for std::cerr
 
 #include "mmu.h"        // for mmu_init
 
-using std::cout;
+using std::cerr;
 
 int main(int argc, char* argv[]) {
     char* romfile;          // ROM filename for input
 
     if (argc < 2) {         // Argument count check
-        cout << "ERROR: ROM filename not given.\n";
+        cerr << "ERROR: ROM filename not given.\n";
         return 1;
     } else if (argc > 2) {
-        cout << "ERROR: Too many arguments.\n";
+        cerr << "ERROR: Too many arguments.\n";
         return 1;
     } else {
         romfile = argv[1];  // Try to load this as a ROM file
