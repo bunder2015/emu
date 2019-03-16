@@ -1,6 +1,8 @@
 bin
+CppCheckResults.xml
 core
 emu.cbp
 emu.depend
 emu.layout
+gmon.out
 obj

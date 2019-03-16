@@ -28,8 +28,9 @@ int rom_ingest(char* romfile, char** rombuffer) {
 }
 
 int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
-                    int* chrromsize, int *chrramsize, int* mirrormode,
-                    int* batterypresence, int* fourscreenmode, int* tvsystem) {
+                    int* chrromsize, int *chrramsize, int* mapper,
+                    int* mirrormode, int* batterypresent, int* fourscreenmode,
+                    int* tvsystem, int* busconflicts) {
 
     int inesformat = 0;
 // TODO (chris#9#): consider adding "archiac" iNES ROM support
@@ -37,7 +38,7 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
         if ((*(*rombuffer + 0x07) & 0x0C) == 0x08) {                // If byte 7, bits 8 and 4, are (1,0)
             inesformat = 2;                                         // we are iNES format 2.0
         } else if (((*(*rombuffer + 0x07) & 0x0C) == 0x00)          // If byte 7, bits 8 and 4, are (0,0)
-                   && (memcmp(*rombuffer + 0x0C, headerempty, sizeof(headerempty)) == 0)) { // and 12 through 15 are 0
+                   && (memcmp(*rombuffer + 0x0C, headerempty, sizeof(headerempty)) == 0)) { // and bytes 12 through 15 are 0
             inesformat = 1;                                         // we are iNES format 0.7 or 1.0
         }
 // TODO (chris#1#): break down header elements to choose memory mapper and prepare CPU/PPU memory map
@@ -66,12 +67,12 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
                 return 1;
             }
 
-            *prgromsize = (*(*rombuffer + 0x04) & 0xFF);            // PRG ROM is byte 4 * 16k in size
-            cout << "INFO: PRG ROM size: " << *prgromsize * 16384 << " bytes total\n";
+            *prgromsize = ((*(*rombuffer + 0x04) & 0xFF) * 16384);      // PRG ROM is byte 4 * 16k in size
+            cout << "INFO: PRG ROM size: " << *prgromsize << " bytes total\n";
 
             if ((*(*rombuffer + 0x05) & 0xFF) > 0) {
-                *chrromsize = (*(*rombuffer + 0x05) & 0xFF);        // CHR ROM is byte 5 * 8k in size
-                cout << "INFO: CHR ROM size: " << *chrromsize * 8192 << " bytes total\n";
+                *chrromsize = ((*(*rombuffer + 0x05) & 0xFF) * 8192);   // CHR ROM is byte 5 * 8k in size
+                cout << "INFO: CHR ROM size: " << *chrromsize << " bytes total\n";
             } else {
                 /* TODO (chris#8#): Upon analysis of various ROMs it would appear that
                 *  if they contain CHR RAM instead of a CHR ROM, the game has 8kb
@@ -82,12 +83,13 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
                 *   RacerMate Challenge II (unlicensed): 2 * 32kb
                 *  The iNES v1 header does not specify CHR RAM size
                 */
-                *chrramsize = 1;
-                cout << "INFO: CHR RAM size: " << *chrramsize * 8192 << " bytes total\n";
+                *chrramsize = 8192;
+                cout << "INFO: CHR RAM size: " << *chrramsize << " bytes total\n";
             }
-
-            if ((*(*rombuffer + 0x06) & 0x02) == 0x02) {            // If byte 6, bit 2 is 1
-                *batterypresence = 1;                               // we have a battery
+// TODO (chris#7#): Make this AND instead of OR for strictness
+            if (((*(*rombuffer + 0x06) & 0x02) == 0x02)             // If byte 6, bit 2 is 1
+                    || ((*(*rombuffer + 0x0A) & 0x10) == 0x10)) {   // or byte 10, bit 16 is 1
+                *batterypresent = 1;                                // we have a battery
                 cout << "INFO: Battery backed PRG RAM present\n";
             }
             /* TODO (chris#8#): Upon analysis of various ROMs it would appear that
@@ -105,15 +107,15 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             *   Romance of the Three Kingdoms II: 32kb
             *  On second thought, we could always just fix the ROMs (except for StarTropics, check mapper before battery)
             */
-            *prgramsize = ((*(*rombuffer + 0x08) & 0xFF) * 8192);            // PRG RAM is byte 8 * 8kb in size
+            *prgramsize = ((*(*rombuffer + 0x08) & 0xFF) * 8192);   // PRG RAM is byte 8 * 8kb in size
             if (*prgramsize > 0) {
                 cout << "INFO: PRG RAM size: " << *prgramsize << " bytes total\n";
             } else {
-                if ((*batterypresence == 1) && (*prgramsize == 0)) {
-                    cerr << "ERROR: Battery without PRG RAM\n";
+                if ((*batterypresent == 1) && (*prgramsize == 0)) { // Battery implies PRG RAM but you must specify it
+                    cerr << "ERROR: Battery without PRG RAM\n";     // it's 2019, stop being lazy and follow the spec
                     return 1;
                 }
-                cout << "INFO: No PRG RAM present\n";
+                cout << "INFO: No PRG RAM present\n";               // There is no way to know if we need a PRG RAM without battery bit
             }
 // TODO (chris#1#): Check for mappers before checking V/H mirroring as the mapper can override mirror bits in header
             if ((*(*rombuffer + 0x06) & 0x08) == 0x08) {            // If byte 6, bit 8 is 1
@@ -128,14 +130,20 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             } else {
                 cout << "INFO: Horizontal mirroring\n";
             }
-
-            if ((*(*rombuffer + 0x09) & 0x01) == 0x01) {            // If byte 9 bit 1 is 1
+// TODO (chris#7#): Make this AND instead of OR for strictness
+            if (((*(*rombuffer + 0x09) & 0x01) == 0x01)             // If byte 9, bit 1 is 1
+                    || ((*(*rombuffer + 0x0A) & 0x02) == 0x02)) {   // or byte 10, bit 2 is 1
                 *tvsystem = 1;                                      // we are PAL
                 cout << "INFO: TV system: PAL\n";
             } else {
                 cout << "INFO: TV system: NTSC\n";
             }
-// TODO (chris#1#): More iNES v1 more header elements - mapper bits, byte 10
+
+            if ((*(*rombuffer + 0x0A) & 0x20) == 0x20) {            // If byte 10, bit 32 is 1
+                *busconflicts = 1;                                  // we have bus conflicts to be careful about
+                cout << "INFO: Bus conflicts possible\n";           // if we decide to emulate them
+            }
+// TODO (chris#1#): More iNES v1 more header elements - mapper bits
             return 0;
         } else {
             cerr << "ERROR: Not an iNES 0.7/1.0 or 2.0 file! (valid magic, format corrupted)\n";
