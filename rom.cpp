@@ -27,10 +27,17 @@ int rom_ingest(char* romfile, char** rombuffer) {
     }
 }
 
-int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
-                    int* chrromsize, int *chrramsize, int* mapper,
-                    int* mirrormode, int* batterypresent, int* fourscreenmode,
-                    int* tvsystem, int* busconflicts) {
+int rom_headerparse(char** rombuffer,
+                    unsigned long* prgromsize,
+                    unsigned long* prgramsize,
+                    unsigned long* chrromsize,
+                    unsigned long* chrramsize,
+                    unsigned int* mapper,
+                    bool* batterypresent,
+                    bool* mirrormode,
+                    bool* fourscreenmode,
+                    bool* tvsystem,
+                    bool* busconflicts) {
 
     int inesformat = 0;
 // TODO (chris#9#): consider adding "archiac" iNES ROM support
@@ -59,29 +66,30 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             } else if ((*(*rombuffer + 0x06) & 0x04) == 0x04) {     // If byte 6, bit 4 is 1
                 cerr << "ERROR: Trainers are not supported\n";      // we have a trainer which unmodified ROMs do not have
                 return 1;
-            } else if ((*(*rombuffer + 0x09) & 0xFE) > 1) {         // If byte 9, bits 2 through 128, are 1
-                cerr << "ERROR: Header byte 9 reserved bits are not zero\n";
+            } else if ((*(*rombuffer + 0x09) & 0xFE) > 0) {         // If byte 9, bits 2 through 128, are not 0
+                cerr << "ERROR: Reserved header byte 9 bits are not zero\n";
                 return 1;
+// TODO (chris#1#): Unused byte 10 bits
             } else if ((*(*rombuffer + 0x0B) & 0xFF) > 0) {         // If byte 11 is not 0
                 cerr << "ERROR: Unused header byte 11 is not zero\n";
                 return 1;
             }
 
-            *prgromsize = ((*(*rombuffer + 0x04) & 0xFF) * 16384);      // PRG ROM is byte 4 * 16k in size
+            *prgromsize = ((*(*rombuffer + 0x04) & 0xFF) * 16384);  // PRG ROM is byte 4 * 16k in size
             cout << "INFO: PRG ROM size: " << *prgromsize << " bytes total\n";
 
             if ((*(*rombuffer + 0x05) & 0xFF) > 0) {
                 *chrromsize = ((*(*rombuffer + 0x05) & 0xFF) * 8192);   // CHR ROM is byte 5 * 8k in size
                 cout << "INFO: CHR ROM size: " << *chrromsize << " bytes total\n";
             } else {
-                /* TODO (chris#8#): Upon analysis of various ROMs it would appear that
-                *  if they contain CHR RAM instead of a CHR ROM, the game has 8kb
+                /* TODO (chris#8#): The iNES v1 header does not specify CHR RAM size
+                *  Upon analysis of various ROMs it would appear that if
+                *  they contain CHR RAM instead of a CHR ROM, the game has 8kb
                 *  for this purpose with the exception of:
                 *   Gauntlet: 2kb
                 *   Rad Racer: 4kb (it has 8 on the board but only uses 4?)
                 *   Videomation: 2 * 8kb
                 *   RacerMate Challenge II (unlicensed): 2 * 32kb
-                *  The iNES v1 header does not specify CHR RAM size
                 */
                 *chrramsize = 8192;
                 cout << "INFO: CHR RAM size: " << *chrramsize << " bytes total\n";
@@ -89,12 +97,13 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
 // TODO (chris#7#): Make this AND instead of OR for strictness
             if (((*(*rombuffer + 0x06) & 0x02) == 0x02)             // If byte 6, bit 2 is 1
                     || ((*(*rombuffer + 0x0A) & 0x10) == 0x10)) {   // or byte 10, bit 16 is 1
-                *batterypresent = 1;                                // we have a battery
+                *batterypresent = true;                             // we have a battery
                 cout << "INFO: Battery backed PRG RAM present\n";
             }
-            /* TODO (chris#8#): Upon analysis of various ROMs it would appear that
-            *  all of them lie about their PRG RAM size.  All games that have battery
-            *  backed PRG RAM have 8kb with the exception of:
+            /* TODO (chris#8#): Check mapper before battery, fix bad ROMs
+            *  Upon analysis of various ROMs it would appear that all of them lie
+            *  about their PRG RAM size.  All games that have battery backed PRG RAM
+            *  have 8kb with the exception of:
             *   StarTropics: Battery but no PRG RAM, 1k on MMC6 but not included in header
             *   Zoda's Revenge: StarTropics II: Battery but no PRG RAM, 1k on MMC6 but not included in the header
             *   Bandit Kings of Ancient China: 2 * 8kb, 8kb on battery
@@ -105,13 +114,13 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             *   Romance of the Three Kingdoms: 2 * 8kb, 8kb on battery
             *   Uncharted Waters: 2 * 8kb, 8kb on battery
             *   Romance of the Three Kingdoms II: 32kb
-            *  On second thought, we could always just fix the ROMs (except for StarTropics, check mapper before battery)
+            *  On second thought, we could always just fix the ROMs (except for StarTropics)
             */
             *prgramsize = ((*(*rombuffer + 0x08) & 0xFF) * 8192);   // PRG RAM is byte 8 * 8kb in size
             if (*prgramsize > 0) {
                 cout << "INFO: PRG RAM size: " << *prgramsize << " bytes total\n";
             } else {
-                if ((*batterypresent == 1) && (*prgramsize == 0)) { // Battery implies PRG RAM but you must specify it
+                if ((*batterypresent == true) && (*prgramsize == 0)) { // Battery implies PRG RAM but you must specify it
                     cerr << "ERROR: Battery without PRG RAM\n";     // it's 2019, stop being lazy and follow the spec
                     return 1;
                 }
@@ -119,13 +128,13 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
             }
 // TODO (chris#1#): Check for mappers before checking V/H mirroring as the mapper can override mirror bits in header
             if ((*(*rombuffer + 0x06) & 0x08) == 0x08) {            // If byte 6, bit 8 is 1
-                *fourscreenmode = 1;                                // we are four screen mirroring (Gauntlet, Rad Racer II)
+                *fourscreenmode = true;                             // we are four screen mirroring (Gauntlet, Rad Racer II)
                 cout << "INFO: Four screen mirroring\n";
                 if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {        // If byte 6, bit 1 is 1
-                    *mirrormode = 1;                                // this bit probably does nothing when in four screen
+                    *mirrormode = true;                             // this bit probably does nothing when in four screen
                 }
             } else if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {     // If byte 6, bit 1 is 1
-                *mirrormode = 1;                                    // we are vertical mirroring
+                *mirrormode = true;                                 // we are vertical mirroring
                 cout << "INFO: Vertical mirroring\n";
             } else {
                 cout << "INFO: Horizontal mirroring\n";
@@ -133,14 +142,14 @@ int rom_headerparse(char** rombuffer, int* prgromsize, int* prgramsize,
 // TODO (chris#7#): Make this AND instead of OR for strictness
             if (((*(*rombuffer + 0x09) & 0x01) == 0x01)             // If byte 9, bit 1 is 1
                     || ((*(*rombuffer + 0x0A) & 0x02) == 0x02)) {   // or byte 10, bit 2 is 1
-                *tvsystem = 1;                                      // we are PAL
+                *tvsystem = true;                                   // we are PAL
                 cout << "INFO: TV system: PAL\n";
             } else {
                 cout << "INFO: TV system: NTSC\n";
             }
 
             if ((*(*rombuffer + 0x0A) & 0x20) == 0x20) {            // If byte 10, bit 32 is 1
-                *busconflicts = 1;                                  // we have bus conflicts to be careful about
+                *busconflicts = true;                               // we have bus conflicts to be careful about
                 cout << "INFO: Bus conflicts possible\n";           // if we decide to emulate them
             }
 // TODO (chris#1#): More iNES v1 more header elements - mapper bits
