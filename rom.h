@@ -6,11 +6,11 @@ const char headerempty[4] = { 0x00, 0x00, 0x00, 0x00 }; // Four empty bytes
 
 int rom_ingest(char* romfile, char** rombuffer);
 int rom_headerparse(char** rombuffer,
+                    unsigned short* mapper,
                     unsigned long* prgromsize,
                     unsigned long* prgramsize,
                     unsigned long* chrromsize,
                     unsigned long* chrramsize,
-                    unsigned int* mapper,
                     bool* batterypresent,
                     bool* mirrormode,
                     bool* fourscreenmode,
