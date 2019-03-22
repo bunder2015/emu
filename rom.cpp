@@ -8,7 +8,7 @@ using std::cout;
 using std::cerr;
 using std::ifstream;
 
-int rom_ingest(char* romfile, char** rombuffer) {
+int rom_ingest(char *romfile, char **rombuffer) {
     ifstream rf;                                // Handle for ROM file opening
 
     rf.open(romfile, ifstream::binary);         // Open file
@@ -27,17 +27,17 @@ int rom_ingest(char* romfile, char** rombuffer) {
     }
 }
 
-int rom_headerparse(char** rombuffer,
-                    unsigned short* mapper,
-                    unsigned long* prgromsize,
-                    unsigned long* prgramsize,
-                    unsigned long* chrromsize,
-                    unsigned long* chrramsize,
-                    bool* batterypresent,
-                    bool* mirrormode,
-                    bool* fourscreenmode,
-                    bool* tvsystem,
-                    bool* busconflicts) {
+int rom_headerparse(char **rombuffer,
+                    unsigned short *mapper,
+                    unsigned long *prgromsize,
+                    unsigned long *prgramsize,
+                    unsigned long *chrromsize,
+                    unsigned long *chrramsize,
+                    bool *batterypresent,
+                    bool *mirrormode,
+                    bool *fourscreenmode,
+                    bool *tvsystem,
+                    bool *busconflicts) {
 
     unsigned short inesformat = 0;
     unsigned short mapperlow = 0;
@@ -164,7 +164,7 @@ int rom_headerparse(char** rombuffer,
             return 0;
         } else if (inesformat == 2) {
             cout << "INFO: iNES header format 2\n";
-// TODO (chris#1#): iNES v2 headers
+// TODO (chris#5#): iNES v2 headers
             return 0;
         } else {
             cerr << "ERROR: Not an iNES 0.7/1.0 or 2.0 file! (valid magic, format corrupted)\n";

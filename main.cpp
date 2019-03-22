@@ -4,8 +4,8 @@
 
 using std::cerr;
 
-int main(int argc, char* argv[]) {
-    char* romfile;          // ROM filename for input
+int main(int argc, char *argv[]) {
+    char *romfile;          // ROM filename for input
 
     if (argc < 2) {         // Argument count check
         cerr << "ERROR: ROM filename not given.\n";
@@ -19,6 +19,7 @@ int main(int argc, char* argv[]) {
 
     if (mmu_init(romfile) == 0) {   // Load ROM file and initialize memory map
 // TODO (chris#6#): CPU/APU/PPU
+// TODO (chris#6#): Initialize PPU SPRRAM in PPU
     } else {
         return 1;   // mmu_init failed
     }

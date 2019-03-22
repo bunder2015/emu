@@ -1,14 +1,24 @@
 #include <algorithm>    // for std::fill
+#include <iostream>     // for std::cerr
+#include <cstring>      // for memcpy
 
 #include "rom.h"        // for rom_ingest rom_headerparse
 
 using std::fill;
+using std::cerr;
 
 unsigned char consolewram[0x800];   // 2kb console WRAM (zero page, stack, etc), to be mapped at CPU 0x0000
 unsigned char consolevram[0x800];   // 2kb console VRAM (nametables), to be mapped at PPU 0x2000
+unsigned char *prgrom;              // Cartridge PRG ROM
+unsigned char *chrrom;              // Cartridge CHR ROM
 
-int mmu_init(char* romfile) {
-    char* rombuffer;                // In memory copy of the entire ROM file
+void consoleram_init() {
+    fill (consolewram+0x000, consolewram+0x800, 0xFF);  // Initialize console WRAM
+    fill (consolevram+0x000, consolevram+0x800, 0xFF);  // Initialize console VRAM
+}
+
+int mmu_init(char *romfile) {
+    char *rombuffer;                // In memory copy of the entire ROM file
     unsigned short mapper = 0;      // iNES mapper number
     unsigned long prgromsize = 0;   // Size of cartridge PRG ROM
     unsigned long prgramsize = 0;   // Size of cartridge PRG RAM (WRAM + save WRAM)
@@ -32,9 +42,36 @@ int mmu_init(char* romfile) {
                                &fourscreenmode,
                                &tvsystem,
                                &busconflicts) == 0) {
-        fill (consolewram+0x000, consolewram+0x800, 0xFF);    // Initialize console WRAM
-        fill (consolevram+0x000, consolevram+0x800, 0xFF);    // Initialize console VRAM
-// TODO (chris#5#): Memory mappers
+        consoleram_init();
+
+        switch (mapper) {
+        case 0:
+            /*  iNES mapper 0 (aka NROM)
+            *     No mapper hardware
+            *     32kb PRG ROM to be mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
+            *     8kb CHR ROM to be mapped to PPU 0x0000
+            */
+            if (prgromsize == 32768) {
+                prgrom = new unsigned char[prgromsize];
+                memcpy(prgrom, rombuffer + 16, prgromsize);                 // Skip the header and copy PRG ROM data to its own container
+                chrrom = new unsigned char[chrromsize];
+                memcpy(chrrom, rombuffer + 16 + prgromsize, chrromsize);    // Skip the header and PRG ROM and copy CHR ROM to its own container
+// TODO (chris#1#): Nametable mirroring
+                break;
+            } else {
+                prgrom = new unsigned char[prgromsize + 16384];
+                memcpy(prgrom, rombuffer + 16, prgromsize);                 // Skip the header and copy PRG ROM data to its own container
+                memcpy(prgrom + 16384, rombuffer + 16, prgromsize);         // Skip the header and first copy and copy PRG ROM data to its own container
+                chrrom = new unsigned char[chrromsize];
+                memcpy(chrrom, rombuffer + 16 + prgromsize, chrromsize);    // Skip the header and PRG ROM and copy CHR ROM to its own container
+// TODO (chris#1#): Nametable mirroring
+                break;
+            }
+// TODO (chris#4#): More memory mappers
+        default:
+            cerr << "ERROR: Memory mapper not yet implemented\n";
+            return 1;
+        }
 // TODO (chris#7#): Bus conflicts
         return 0;
     } else {
