@@ -2,7 +2,7 @@
 #include <fstream>      // for std::ifstream
 #include <cstring>      // for memcmp
 
-#include "rom.h"        // for headermagic
+#include "rom.h"        // for headermagic headerempty
 
 using std::cout;
 using std::cerr;
@@ -132,6 +132,7 @@ int rom_headerparse(char **rombuffer,
                     cerr << "ERROR: Battery without PRG RAM, fix header byte 8\n";  // if ROMs didn't lie, the only two games to fail here are StarTropics
                     return 1;
                 }
+
                 cout << "INFO: No PRG RAM present\n";               // There is no way to know if we need a PRG RAM without battery bit
             }
 
@@ -141,6 +142,7 @@ int rom_headerparse(char **rombuffer,
                 if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {        // If byte 6, bit 1 is 1
                     *mirrormode = true;                             // this bit probably does nothing when in four screen
                 }
+
             } else if ((*(*rombuffer + 0x06) & 0x01) == 0x01) {     // If byte 6, bit 1 is 1
                 *mirrormode = true;                                 // we are vertical mirroring
                 cout << "INFO: Vertical mirroring\n";
@@ -163,13 +165,14 @@ int rom_headerparse(char **rombuffer,
 
             return 0;
         } else if (inesformat == 2) {
-            cout << "INFO: iNES header format 2\n";
 // TODO (chris#5#): iNES v2 headers
-            return 0;
+            cout << "ERROR: iNES header format 2 not yet implemented\n";
+            return 1;
         } else {
             cerr << "ERROR: Not an iNES 0.7/1.0 or 2.0 file! (valid magic, format corrupted)\n";
             return 1;
         }
+
     } else {
         cerr << "ERROR: Not an iNES file! (invalid magic)\n";
         return 1;

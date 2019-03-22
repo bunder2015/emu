@@ -20,10 +20,10 @@ int main(int argc, char *argv[]) {
     if (mmu_init(romfile) == 0) {   // Load ROM file and initialize memory map
 // TODO (chris#6#): CPU/APU/PPU
 // TODO (chris#6#): Initialize PPU SPRRAM in PPU
+// TODO (chris#7#): Bus conflicts
     } else {
         return 1;   // mmu_init failed
     }
 
-    // end
-    return 0;
+    return 0;       // Exit
 }
