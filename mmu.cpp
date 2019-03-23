@@ -1,20 +1,20 @@
 #include <algorithm>    // for std::fill
-#include <iostream>     // for std::cerr
 #include <cstring>      // for memcpy
+#include <iostream>     // for std::cerr
 
 #include "rom.h"        // for rom_ingest rom_headerparse
 
-using std::fill;
 using std::cerr;
+using std::fill;
 
-unsigned char consolewram[0x800];   // 2kb console WRAM (zero page, stack, etc), to be mapped at CPU 0x0000
-unsigned char consolevram[0x800];   // 2kb console VRAM (nametables), to be mapped at PPU 0x2000
+unsigned char consolewram[2048];    // 2kb console WRAM (zero page, stack, etc), to be mapped at CPU 0x0000
+unsigned char consolevram[2048];    // 2kb console VRAM (nametables), to be mapped at PPU 0x2000
 unsigned char *prgrom;              // Cartridge PRG ROM
 unsigned char *chrrom;              // Cartridge CHR ROM
 
 void consoleram_init() {
-    fill (consolewram+0x000, consolewram+0x800, 0xFF);  // Initialize console WRAM
-    fill (consolevram+0x000, consolevram+0x800, 0xFF);  // Initialize console VRAM
+    fill (consolewram, (consolewram + 2048), 0xFF);  // Initialize console WRAM
+    fill (consolevram, (consolevram + 2048), 0xFF);  // Initialize console VRAM
 }
 
 int mmu_init(char *romfile) {
@@ -52,9 +52,9 @@ int mmu_init(char *romfile) {
             *     8kb CHR ROM to be mapped to PPU 0x0000
             */
             prgrom = new unsigned char[prgromsize];
-            memcpy(prgrom, rombuffer + 16, prgromsize);                 // Skip the header and copy PRG ROM data to its own container
+            memcpy(prgrom, (rombuffer + 16), prgromsize);                 // Skip the header and copy PRG ROM data to its own container
             chrrom = new unsigned char[chrromsize];
-            memcpy(chrrom, rombuffer + 16 + prgromsize, chrromsize);    // Skip the header and PRG ROM and copy CHR ROM to its own container
+            memcpy(chrrom, (rombuffer + 16 + prgromsize), chrromsize);    // Skip the header and PRG ROM and copy CHR ROM to its own container
 // TODO (chris#1#): Nametable mirroring
             break;
         default:
