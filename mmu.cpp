@@ -3,6 +3,7 @@
 #include <iostream>     // for std::cerr
 
 #include "rom.h"        // for rom_ingest rom_headerparse
+#include "mmu.h"
 
 using std::cerr;
 using std::fill;
@@ -18,43 +19,21 @@ void consoleram_init() {
 }
 
 int mmu_init(char *romfile) {
-    char *rombuffer;                // In memory copy of the entire ROM file
-    unsigned short mapper = 0;      // iNES mapper number
-    unsigned long prgromsize = 0;   // Size of cartridge PRG ROM
-    unsigned long prgramsize = 0;   // Size of cartridge PRG RAM (WRAM + save WRAM)
-    unsigned long chrromsize = 0;   // Size of cartridge CHR ROM
-    unsigned long chrramsize = 0;   // Size of cartridge CHR RAM (VRAM)
-    bool batterypresent = false;    // Cartridge PRG RAM save battery presence toggle
-    bool mirrormode = false;        // Horizontal/Vertical mirroring toggle (true = vertical)
-    bool fourscreenmode = false;    // Four screen mirroring toggle
-    bool tvsystem = false;          // NTSC/PAL TV system toggle (true = PAL)
-    bool busconflicts = false;      // Bus conflicts
-
-    if (rom_ingest(romfile, &rombuffer) == 0    // Load the ROM into memory
-            && rom_headerparse(&rombuffer,      // and parse the header
-                               &mapper,
-                               &prgromsize,
-                               &prgramsize,
-                               &chrromsize,
-                               &chrramsize,
-                               &batterypresent,
-                               &mirrormode,
-                               &fourscreenmode,
-                               &tvsystem,
-                               &busconflicts) == 0) {
+    romheader rh;
+    if ((rom_ingest(romfile, rh) == 0) && (rom_headerparse(rh) == 0)) { // Load the ROM into memory
         consoleram_init();
 
-        switch (mapper) {
+        switch (rh.mapper) {
         case 0:
             /*  iNES mapper 0 (aka NROM)
             *     No mapper hardware
             *     32kb PRG ROM to be mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
             *     8kb CHR ROM to be mapped to PPU 0x0000
             */
-            prgrom = new unsigned char[prgromsize];
-            memcpy(prgrom, (rombuffer + 16), prgromsize);                 // Skip the header and copy PRG ROM data to its own container
-            chrrom = new unsigned char[chrromsize];
-            memcpy(chrrom, (rombuffer + 16 + prgromsize), chrromsize);    // Skip the header and PRG ROM and copy CHR ROM to its own container
+            prgrom = new unsigned char[rh.prgromsize];
+            memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);                 // Skip the header and copy PRG ROM data to its own container
+            chrrom = new unsigned char[rh.chrromsize];
+            memcpy(chrrom, (rh.rombuffer + 16 + rh.prgromsize), rh.chrromsize);    // Skip the header and PRG ROM and copy CHR ROM to its own container
 // TODO (chris#1#): Nametable mirroring
             break;
         default:
