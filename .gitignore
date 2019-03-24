@@ -7,3 +7,4 @@ emu.depend
 emu.layout
 gmon.out
 obj
+perf.data
