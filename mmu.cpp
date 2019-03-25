@@ -2,22 +2,16 @@
 #include <cstring>      // for memcpy
 #include <iostream>     // for std::cerr
 
-#include "rom.h"        // for rom_ingest rom_headerparse
-#include "mmu.h"
+#include "rom.h"        // for rom_ingest rom_headerparse romheader
+#include "memory.h"     // for consolewram consolevram prgrom chrrom
 
 using std::cerr;
 using std::fill;
-
-unsigned char consolewram[2048];    // 2kb console WRAM (zero page, stack, etc), to be mapped at CPU 0x0000
-unsigned char consolevram[2048];    // 2kb console VRAM (nametables), to be mapped at PPU 0x2000
-unsigned char *prgrom;              // Cartridge PRG ROM
-unsigned char *chrrom;              // Cartridge CHR ROM
 
 void consoleram_init() {
     fill (consolewram, (consolewram + 2048), 0xFF);  // Initialize console WRAM
     fill (consolevram, (consolevram + 2048), 0xFF);  // Initialize console VRAM
 }
-
 int mmu_init(char *romfile) {
     romheader rh;
     if ((rom_ingest(romfile, rh) == 0) && (rom_headerparse(rh) == 0)) { // Load the ROM into memory
@@ -33,7 +27,7 @@ int mmu_init(char *romfile) {
             prgrom = new unsigned char[rh.prgromsize];
             memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);                 // Skip the header and copy PRG ROM data to its own container
             chrrom = new unsigned char[rh.chrromsize];
-            memcpy(chrrom, (rh.rombuffer + 16 + rh.prgromsize), rh.chrromsize);    // Skip the header and PRG ROM and copy CHR ROM to its own container
+            memcpy(chrrom, (rh.rombuffer + 16 + rh.prgromsize), rh.chrromsize); // Skip the header and PRG ROM and copy CHR ROM to its own container
 // TODO (chris#1#): Nametable mirroring
             break;
         default:
