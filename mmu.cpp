@@ -12,6 +12,7 @@ void consoleram_init() {
     fill (consolewram, (consolewram + 2048), 0xFF);  // Initialize console WRAM
     fill (consolevram, (consolevram + 2048), 0xFF);  // Initialize console VRAM
 }
+
 int mmu_init(char *romfile) {
     romheader rh;
     if ((rom_ingest(romfile, rh) == 0) && (rom_headerparse(rh) == 0)) { // Load the ROM into memory
