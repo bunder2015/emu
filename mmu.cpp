@@ -20,20 +20,20 @@ int cpumem_read(cpubus cb, romheader rh) {
         if (cb.cpuaddrbus < 0x800) {                                // If we are reading the console WRAM
             cb.cpudatabus = *(consolewram + cb.cpuaddrbus);         // put the data on the bus for the CPU to read
         } else if (cb.cpuaddrbus >= 0x8000) {                       // If we are reading from cartridge ROM
-            if (rh.prgromsize == 32768) {
+            if (rh.prgromsize == 32768) {                           // and we are a 32kb PRG ROM
                 cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));   // put the data on the bus for the CPU to read
             } else {
-                unsigned short offsetaddr = cb.cpuaddrbus % 0x8000;
-                if (offsetaddr < 0x4000) {
-                    cb.cpudatabus = *(prgrom + offsetaddr);
-                } else {
-                    cb.cpudatabus = *(prgrom + (offsetaddr - 0x4000));
+                unsigned short offsetaddr = cb.cpuaddrbus % 0x8000; // Determine whether we are using 0x8000 or 0xC000
+                if (offsetaddr < 0x4000) {                          // If we used 0x8000
+                    cb.cpudatabus = *(prgrom + offsetaddr);         // put the 0x8000 data on the bus for the CPU to read
+                } else {                                            // If we used 0xC000
+                    cb.cpudatabus = *(prgrom + (offsetaddr - 0x4000));  // put the mirrored 0x8000 data on the bus for the CPU to read
                 }
 
             }
 
         } else {
-            cerr << "ERROR: CPU tried to read open bus, not yet implemented " << hex << cb.cpuaddrbus << '\n';
+            cerr << "ERROR: CPU tried to read open bus, not yet implemented: 0x" << hex << cb.cpuaddrbus << '\n';
             return 1;
         }
 
@@ -55,7 +55,7 @@ int cpumem_write(cpubus cb, romheader rh) {
         if (cb.cpuaddrbus < 0x800) {                                // If we are writing to console WRAM
             *(consolewram + cb.cpuaddrbus) = cb.cpudatabus;         // take the data off the bus and write it to the memory block
         } else {
-            cerr << "ERROR: CPU tried to write to non-writable memory " << hex << cb.cpuaddrbus << '\n';
+            cerr << "ERROR: CPU tried to write to non-writable memory: 0x" << hex << cb.cpuaddrbus << '\n';
             return 1;
         }
 
@@ -99,7 +99,7 @@ int mmu_init(char *romfile) {
 
 // FIXME (chris#6#): Remove CPU testing code
         cpubus cb;
-        cb.cpuaddrbus = 0x8000;
+        cb.cpuaddrbus = 0xC000;
         cpumem_read(cb, rh);
         return 0;
     } else {
