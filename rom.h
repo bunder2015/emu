@@ -13,7 +13,7 @@ extern struct romheader {
     bool fourscreenmode = false;    // Four screen mirroring toggle
     bool tvsystem = false;          // NTSC/PAL TV system toggle (true = PAL)
     bool busconflicts = false;      // Bus conflicts
-}rh_t;
+}romheader_t;
 
 const char headermagic[4] = { 0x4E, 0x45, 0x53, 0x1A }; // "N", "E", "S", 0x1A
 const char headerempty[4] = { 0x00, 0x00, 0x00, 0x00 }; // Four empty bytes
