@@ -20,17 +20,29 @@ int cpumem_read(cpubus cb, romheader rh) {
         if (cb.cpuaddrbus < 0x800) {                                // If we are reading the console WRAM
             cb.cpudatabus = *(consolewram + cb.cpuaddrbus);         // put the data on the bus for the CPU to read
         } else if (cb.cpuaddrbus >= 0x8000) {                       // If we are reading from cartridge ROM
-// TODO (chris#1#): 16k prgrom
-            cb.cpudatabus = *(prgrom + (cb.cpuaddrbus - 0x8000));   // put the data on the bus for the CPU to read
+            if (rh.prgromsize == 32768) {
+                cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));   // put the data on the bus for the CPU to read
+            } else {
+                unsigned short offsetaddr = cb.cpuaddrbus % 0x8000;
+                if (offsetaddr < 0x4000) {
+                    cb.cpudatabus = *(prgrom + offsetaddr);
+                } else {
+                    cb.cpudatabus = *(prgrom + (offsetaddr - 0x4000));
+                }
+
+            }
+
         } else {
             cerr << "ERROR: CPU tried to read open bus, not yet implemented " << hex << cb.cpuaddrbus << '\n';
             return 1;
         }
+
         break;
     default:
         cerr << "ERROR: Memory mapper not yet implemented\n";       // We should never get here if mmu_init does its job
         return 1;
     }
+
     return 0;
 }
 
@@ -46,11 +58,13 @@ int cpumem_write(cpubus cb, romheader rh) {
             cerr << "ERROR: CPU tried to write to non-writable memory " << hex << cb.cpuaddrbus << '\n';
             return 1;
         }
+
         break;
     default:
         cerr << "ERROR: Memory mapper not yet implemented\n";       // We should never get here if mmu_init does its job
         return 1;
     }
+
     return 0;
 }
 
@@ -83,6 +97,10 @@ int mmu_init(char *romfile) {
             return 1;
         }
 
+// FIXME (chris#6#): Remove CPU testing code
+        cpubus cb;
+        cb.cpuaddrbus = 0x8000;
+        cpumem_read(cb, rh);
         return 0;
     } else {
         return 1;   // rom_ingest or rom_headerparse failed
