@@ -14,11 +14,11 @@ int cpumem_read(cpubus cb, romheader rh) {
     switch (rh.mapper) {
     case 0:
         /*  iNES mapper 0 (aka NROM)
-        *     2kb console WRAM mapped to CPU 0x0000
+        *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
         *     32kb PRG ROM mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
         */
-        if (cb.cpuaddrbus < 0x800) {                                // If we are reading the console WRAM
-            cb.cpudatabus = *(consolewram + cb.cpuaddrbus);         // put the data on the bus for the CPU to read
+        if (cb.cpuaddrbus < 0x2000) {                               // If we are reading the console WRAM
+            cb.cpudatabus = *(consolewram + cb.cpuaddrbus % 0x800); // put the data on the bus for the CPU to read
         } else if (cb.cpuaddrbus >= 0x8000) {                       // If we are reading from cartridge ROM
             if (rh.prgromsize == 32768) {                           // and we are a 32kb PRG ROM
                 cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));   // put the data on the bus for the CPU to read
@@ -50,10 +50,10 @@ int cpumem_write(cpubus cb, romheader rh) {
     switch (rh.mapper) {
     case 0:
         /*  iNES mapper 0 (aka NROM)
-        *     2kb console WRAM mapped to CPU 0x0000
+        *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
         */
-        if (cb.cpuaddrbus < 0x800) {                                // If we are writing to console WRAM
-            *(consolewram + cb.cpuaddrbus) = cb.cpudatabus;         // take the data off the bus and write it to the memory block
+        if (cb.cpuaddrbus < 0x2000) {                               // If we are writing to console WRAM
+            *(consolewram + cb.cpuaddrbus % 0x800) = cb.cpudatabus; // take the data off the bus and write it to the memory block
         } else {
             cerr << "ERROR: CPU tried to write to non-writable memory: 0x" << hex << cb.cpuaddrbus << '\n';
             return 1;
@@ -81,12 +81,11 @@ int mmu_init(char *romfile) {
         switch (rh.mapper) {
         case 0:
             /*  iNES mapper 0 (aka NROM)
-            *     No mapper hardware
             *     32kb PRG ROM to be mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
             *     8kb CHR ROM to be mapped to PPU 0x0000
             */
             prgrom = new unsigned char[rh.prgromsize];
-            memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);                 // Skip the header and copy PRG ROM data to its own container
+            memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);     // Skip the header and copy PRG ROM data to its own container
             chrrom = new unsigned char[rh.chrromsize];
             memcpy(chrrom, (rh.rombuffer + 16 + rh.prgromsize), rh.chrromsize); // Skip the header and PRG ROM and copy CHR ROM to its own container
 // TODO (chris#1#): Nametable mirroring
@@ -99,8 +98,21 @@ int mmu_init(char *romfile) {
 
 // FIXME (chris#6#): Remove CPU testing code
         cpubus cb;
-        cb.cpuaddrbus = 0xC000;
+        cb.cpuaddrbus = 0x8000;
         cpumem_read(cb, rh);
+        cb.cpuaddrbus = 0x0000;
+        cb.cpudatabus = 0x11;
+        cpumem_write(cb, rh);
+        cb.cpuaddrbus = 0x0801;
+        cb.cpudatabus = 0x22;
+        cpumem_write(cb, rh);
+        cb.cpuaddrbus = 0x1002;
+        cb.cpudatabus = 0x33;
+        cpumem_write(cb, rh);
+        cb.cpuaddrbus = 0x1803;
+        cb.cpudatabus = 0x44;
+        cpumem_write(cb, rh);
+
         return 0;
     } else {
         return 1;   // rom_ingest or rom_headerparse failed
