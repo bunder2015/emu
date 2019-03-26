@@ -2,8 +2,8 @@
 #define CPU_H_INCLUDED
 
 extern struct cpubus {
-    unsigned short cpuaddrbus;
-    unsigned char cpudatabus;
+    unsigned short cpuaddrbus = 0x0000;
+    unsigned char cpudatabus = 0x00;
 }cpubus_t;
 
 

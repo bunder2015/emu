@@ -15,11 +15,11 @@ int cpumem_read(cpubus cb, romheader rh) {
     case 0:
         /*  iNES mapper 0 (aka NROM)
         *     2kb console WRAM mapped to CPU 0x0000
-        *     32kb PRG ROM to be mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
+        *     32kb PRG ROM mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
         */
-        if (cb.cpuaddrbus > 0x800) {                                // If we are reading the console WRAM
+        if (cb.cpuaddrbus < 0x800) {                                // If we are reading the console WRAM
             cb.cpudatabus = *(consolewram + cb.cpuaddrbus);         // put the data on the bus for the CPU to read
-        } else if (cb.cpuaddrbus <= 0x8000) {                       // If we are reading from cartridge ROM
+        } else if (cb.cpuaddrbus >= 0x8000) {                       // If we are reading from cartridge ROM
 // TODO (chris#1#): 16k prgrom
             cb.cpudatabus = *(prgrom + (cb.cpuaddrbus - 0x8000));   // put the data on the bus for the CPU to read
         } else {
@@ -40,7 +40,7 @@ int cpumem_write(cpubus cb, romheader rh) {
         /*  iNES mapper 0 (aka NROM)
         *     2kb console WRAM mapped to CPU 0x0000
         */
-        if (cb.cpuaddrbus > 0x800) {                                // If we are writing to console WRAM
+        if (cb.cpuaddrbus < 0x800) {                                // If we are writing to console WRAM
             *(consolewram + cb.cpuaddrbus) = cb.cpudatabus;         // take the data off the bus and write it to the memory block
         } else {
             cerr << "ERROR: CPU tried to write to non-writable memory " << hex << cb.cpuaddrbus << '\n';
