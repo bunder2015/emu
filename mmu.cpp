@@ -3,12 +3,18 @@
 #include <iostream>     // for std::cerr std::hex
 
 #include "cpu.h"        // for cpubus
+#include "memory.h"     // for consolewram consolevram prgrom chrrom ppuoamram ppupaletteram
+#include "ppu.h"        // for ppubus
 #include "rom.h"        // for rom_ingest rom_headerparse romheader
-#include "memory.h"     // for consolewram consolevram prgrom chrrom
 
 using std::cerr;
 using std::fill;
 using std::hex;
+
+void consoleram_init() {
+    fill (consolewram, (consolewram + 0x800), 0xFF);  // Initialize console WRAM
+    fill (consolevram, (consolevram + 0x800), 0xFF);  // Initialize console VRAM
+}
 
 int cpumem_read(cpubus cb, romheader rh) {
     switch (rh.mapper) {
@@ -39,6 +45,7 @@ int cpumem_read(cpubus cb, romheader rh) {
 
         break;
     default:
+// TODO (chris#4#): More memory mappers
         cerr << "ERROR: Memory mapper not yet implemented\n";       // We should never get here if mmu_init does its job
         return 1;
     }
@@ -61,16 +68,12 @@ int cpumem_write(cpubus cb, romheader rh) {
 
         break;
     default:
+// TODO (chris#4#): More memory mappers
         cerr << "ERROR: Memory mapper not yet implemented\n";       // We should never get here if mmu_init does its job
         return 1;
     }
 
     return 0;
-}
-
-void consoleram_init() {
-    fill (consolewram, (consolewram + 0x800), 0xFF);  // Initialize console WRAM
-    fill (consolevram, (consolevram + 0x800), 0xFF);  // Initialize console VRAM
 }
 
 int mmu_init(char *romfile) {
@@ -88,7 +91,6 @@ int mmu_init(char *romfile) {
             memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);     // Skip the header and copy PRG ROM data to its own container
             chrrom = new unsigned char[rh.chrromsize];
             memcpy(chrrom, (rh.rombuffer + 16 + rh.prgromsize), rh.chrromsize); // Skip the header and PRG ROM and copy CHR ROM to its own container
-// TODO (chris#1#): Nametable mirroring
             break;
         default:
 // TODO (chris#4#): More memory mappers
@@ -96,8 +98,9 @@ int mmu_init(char *romfile) {
             return 1;
         }
 
-// FIXME (chris#6#): Remove CPU testing code
+// FIXME (chris#6#): Remove CPU/PPU testing code
         cpubus cb;
+        ppubus pb;
         cb.cpuaddrbus = 0x8000;
         cpumem_read(cb, rh);
         cb.cpuaddrbus = 0x0000;
@@ -118,3 +121,35 @@ int mmu_init(char *romfile) {
         return 1;   // rom_ingest or rom_headerparse failed
     }
 }
+
+//int ppumem_read(ppubus pb, romheader rh) {
+//    switch (rh.mapper) {
+//    case 0:
+//        if (pb.ppuaddrbus < 0x2000) {
+//            pb.ppudatabus = *(chrrom + pb.ppuaddrbus);
+//        } else if (pb.ppuaddrbus < 0x3000) {
+//            pb.ppudatabus = *(consolevram + pb.ppuaddrbus);
+//        }
+//        break;
+//    default:
+//// TODO (chris#4#): More memory mappers
+//        cerr << "ERROR: Memory mapper not yet implemented\n";
+//        return 1;
+//    }
+//
+//    return 0;
+//}
+//
+//int ppumem_write(ppubus pb, romheader rh) {
+//    switch (rh.mapper) {
+//    case 0:
+//
+//        break;
+//    default:
+//// TODO (chris#4#): More memory mappers
+//        cerr << "ERROR: Memory mapper not yet implemented\n";
+//        return 1;
+//    }
+//
+//    return 0;
+//}
