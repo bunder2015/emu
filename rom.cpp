@@ -8,7 +8,7 @@ using std::cerr;
 using std::cout;
 using std::ifstream;
 
-unsigned long filesize = 0;
+uint32_t filesize = 0;
 
 int rom_ingest(char *romfile, romheader &rh) {
     ifstream rf;                            // Handle for ROM file opening
@@ -17,10 +17,9 @@ int rom_ingest(char *romfile, romheader &rh) {
 
     if (rf.good()) {
         rf.seekg(0, ifstream::end);         // Go to end of file
-        filesize = static_cast <unsigned long> (rf.tellg());    // Read size of ROM file
+        filesize = static_cast <uint32_t> (rf.tellg());    // Read size of ROM file
         rf.seekg(0, ifstream::beg);         // Go back to beginning of file
         rh.rombuffer = new char[filesize];  // rombuffer holds the file while we read the header and prepare the memory map
-// TODO (chris#1#): warning: conversion to ‘std::streamsize {aka long int}’ from ‘long unsigned int’ may change the sign of the result [-Wsign-conversion]
         rf.read(rh.rombuffer, filesize);    // Read file to rombuffer
         rf.close();                         // Close file
         return 0;
@@ -32,7 +31,7 @@ int rom_ingest(char *romfile, romheader &rh) {
 
 int rom_headerparse(romheader &rh) {
     if (memcmp(rh.rombuffer, headermagic, sizeof(headermagic)) == 0) {  // Compare header magic bytes
-        unsigned short inesformat = 0;
+        uint8_t inesformat = 0;
 
         if ((*(rh.rombuffer + 7) & 0x0C) == 0x08) {         // If byte 7, bits 8 and 4, are (1,0)
             inesformat = 2;                                 // we are iNES format 2.0
@@ -65,17 +64,17 @@ int rom_headerparse(romheader &rh) {
                 return 1;
             }
 
-            unsigned short mapperlow = ((*(rh.rombuffer + 6) & 0xF0) >> 4);    // Lower nibble is the upper nibble of byte 6
-            unsigned short mapperhigh = ((*(rh.rombuffer + 7) & 0xF0) >> 4);   // Upper nibble is the upper nibble of byte 7
-            mapperhigh = static_cast <unsigned short> (mapperhigh << 4);       // Move mapperhigh back to the upper nibble
-            rh.mapper = static_cast <unsigned short> (mapperlow + mapperhigh); // Combine both nibbles into a byte
+            uint16_t mapperlow = ((*(rh.rombuffer + 6) & 0xF0) >> 4);    // Lower nibble is the upper nibble of byte 6
+            uint16_t mapperhigh = ((*(rh.rombuffer + 7) & 0xF0) >> 4);   // Upper nibble is the upper nibble of byte 7
+            mapperhigh = static_cast <uint16_t> (mapperhigh << 4);       // Move mapperhigh back to the upper nibble
+            rh.mapper = static_cast <uint16_t> (mapperlow + mapperhigh); // Combine both nibbles into a byte
             cout << "INFO: Mapper number " << rh.mapper << '\n';
 
-            rh.prgromsize = static_cast <unsigned long> ((*(rh.rombuffer + 4) & 0xFF) * 16384); // PRG ROM is byte 4 * 16k in size
+            rh.prgromsize = static_cast <uint32_t> ((*(rh.rombuffer + 4) & 0xFF) * 16384); // PRG ROM is byte 4 * 16k in size
             cout << "INFO: PRG ROM size: " << rh.prgromsize << " bytes total\n";
 
             if ((*(rh.rombuffer + 5) & 0xFF) > 0) {
-                rh.chrromsize = static_cast <unsigned long> ((*(rh.rombuffer + 5) & 0xFF) * 8192);  // CHR ROM is byte 5 * 8k in size
+                rh.chrromsize = static_cast <uint32_t> ((*(rh.rombuffer + 5) & 0xFF) * 8192);  // CHR ROM is byte 5 * 8k in size
                 cout << "INFO: CHR ROM size: " << rh.chrromsize << " bytes total\n";
             } else {
                 /* TODO (chris#9#): The iNES v1 header does not specify CHR RAM size
@@ -91,7 +90,7 @@ int rom_headerparse(romheader &rh) {
                 cout << "INFO: CHR RAM size: " << rh.chrramsize << " bytes total\n";
             }
 
-            unsigned long romsize = rh.prgromsize + rh.chrromsize;  // ROM file should be as big as the header and its constituent ROMs
+            uint32_t romsize = rh.prgromsize + rh.chrromsize;  // ROM file should be as big as the header and its constituent ROMs
             if ((romsize + 16) != filesize) {                       // we have no way of knowing whether the boundary between ROMs is correct
                 cerr << "ERROR: File size (" << filesize << " bytes) does not match reported ROM size (" << romsize << " bytes + 16 byte header)\n";
                 return 1;
@@ -120,7 +119,7 @@ int rom_headerparse(romheader &rh) {
             *   Romance of the Three Kingdoms II: 32kb
             *  On second thought, we could always just fix the ROMs (except for StarTropics)
             */
-            rh.prgramsize = static_cast <unsigned long> ((*(rh.rombuffer + 8) & 0xFF) * 8192);  // PRG RAM is byte 8 * 8kb in size
+            rh.prgramsize = static_cast <uint32_t> ((*(rh.rombuffer + 8) & 0xFF) * 8192);  // PRG RAM is byte 8 * 8kb in size
 
             if (rh.prgramsize > 0) {
                 cout << "INFO: PRG RAM size: " << rh.prgramsize << " bytes total\n";

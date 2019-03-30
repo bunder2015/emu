@@ -1,14 +1,10 @@
 #ifndef MMU_H_INCLUDED
 #define MMU_H_INCLUDED
 
-#include "cpu.h"    // for cpubus
-#include "ppu.h"    // for ppubus
-#include "rom.h"    // for romheader
-
-int cpumem_read(cpubus cb, romheader rh);
-int cpumem_write(cpubus cb, romheader rh);
+int cpumem_read();
+int cpumem_write();
 int mmu_init(char *romfile);
-int ppumem_read(ppubus pb, romheader rh);
-int ppumem_write(ppubus pb, romheader rh);
+int ppumem_read();
+int ppumem_write();
 
 #endif // MMU_H_INCLUDED
