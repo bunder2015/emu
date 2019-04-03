@@ -18,8 +18,8 @@ ppubus pb;
 void consoleram_init() {
     fill (consolewram, (consolewram + 0x800), 0xFF);    // Initialize console WRAM
     fill (consolevram, (consolevram + 0x800), 0xFF);    // Initialize console VRAM
-    fill (ppuoamram, (ppuoamram + 0x100), 0xFF);        // Initialize PPU internal OAM RAM
     fill (ppupaletteram, (ppupaletteram + 0x20), 0xFF); // Initialize PPU internal palette RAM
+    fill (ppuoamram, (ppuoamram + 0x100), 0xFF);        // Initialize PPU internal OAM RAM (aka SPR RAM)
 }
 
 int cpumem_read() {
@@ -30,7 +30,7 @@ int cpumem_read() {
         *     32kb PRG ROM mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
         */
         if (cb.cpuaddrbus <= 0x1FFF) {                              // If we are reading the console WRAM
-            cb.cpudatabus = *(consolewram + cb.cpuaddrbus % 0x800); // put the data on the bus for the CPU to read
+            cb.cpudatabus = *(consolewram + (cb.cpuaddrbus % 0x800)); // put the data on the bus for the CPU to read
         } else if (cb.cpuaddrbus >= 0x8000) {                       // If we are reading from cartridge ROM
             if (rh.prgromsize == 32768) {                           // and we are a 32kb PRG ROM
                 cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));   // put the data on the bus for the CPU to read
@@ -66,7 +66,7 @@ int cpumem_write() {
         *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
         */
         if (cb.cpuaddrbus <= 0x1FFF) {                              // If we are writing to console WRAM
-            *(consolewram + cb.cpuaddrbus % 0x800) = cb.cpudatabus; // take the data off the bus and write it to the memory block
+            *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus; // take the data off the bus and write it to the memory block
         } else {
             cerr << "ERROR: CPU tried to write to non-writable memory: 0x" << hex << cb.cpuaddrbus << '\n';
             return 1;
@@ -88,13 +88,36 @@ int ppumem_read() {
         if (pb.ppuaddrbus <= 0x1FFF) {                  // CHR ROM (pattern table)
             pb.ppudatabus = *(chrrom + pb.ppuaddrbus);
         } else if (pb.ppuaddrbus <= 0x3EFF) {           // Console VRAM
-            pb.ppudatabus = *(consolevram + pb.ppuaddrbus % 0x100);
+            uint16_t offsetaddr = 0x0000;
+            if (pb.ppuaddrbus >= 0x3000) {
+                offsetaddr = static_cast<uint16_t> (pb.ppuaddrbus - 0x1000);
+            } else {
+                offsetaddr = pb.ppuaddrbus;
+            }
+
+            if (rh.mirrormode == 0) {    // Horizontal
+                if (offsetaddr >= 0x2400) {
+                    offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
+                } else if (offsetaddr >= 0x2C00) {
+                    offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
+                }
+
+                pb.ppudatabus = *(consolewram + (offsetaddr % 0x2000));
+            } else {                    // Vertical
+                if (offsetaddr >= 0x2800) {
+                    offsetaddr = static_cast<uint16_t> (offsetaddr - 0x800);
+                }
+
+                pb.ppudatabus = *(consolewram + (offsetaddr % 0x2000));
+            }
+
         } else if (pb.ppuaddrbus <= 0x3FFF) {           // PPU internal palette RAM
-            pb.ppudatabus = *(ppupaletteram + pb.ppuaddrbus % 0x20);
+            pb.ppudatabus = *(ppupaletteram + (pb.ppuaddrbus % 0x20));
         } else {
             cerr << "ERROR: PPU tried to read outside accessible memory: 0x" << hex << pb.ppuaddrbus << '\n';
             return 1;
         }
+
         break;
     default:
 // TODO (chris#4#): More memory mappers
@@ -111,13 +134,36 @@ int ppumem_write() {
         if (pb.ppuaddrbus <= 0x1FFF) {                  // CHR ROM (pattern table)
             cerr << "ERROR: PPU tried to write to non-writable memory: 0x" << hex << pb.ppuaddrbus << '\n';
         } else if (pb.ppuaddrbus <= 0x3EFF) {           // Console VRAM
-            *(consolevram + pb.ppuaddrbus % 0x100) = pb.ppudatabus;
+            uint16_t offsetaddr = 0x0000;
+            if (pb.ppuaddrbus >= 0x3000) {
+                offsetaddr = static_cast<uint16_t> (pb.ppuaddrbus - 0x1000);
+            } else {
+                offsetaddr = pb.ppuaddrbus;
+            }
+
+            if (rh.mirrormode == 0) {    // Horizontal
+                if (offsetaddr >= 0x2400) {
+                    offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
+                } else if (offsetaddr >= 0x2C00) {
+                    offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
+                }
+
+                *(consolevram + (offsetaddr % 0x2000)) = pb.ppudatabus;
+            } else {                    // Vertical
+                if (offsetaddr >= 0x2800) {
+                    offsetaddr = static_cast<uint16_t> (offsetaddr - 0x800);
+                }
+
+                *(consolevram + (offsetaddr % 0x2000)) = pb.ppudatabus;
+            }
+
         } else if (pb.ppuaddrbus <= 0x3FFF) {           // PPU internal palette RAM
-            *(ppupaletteram + pb.ppuaddrbus % 0x20) = pb.ppudatabus;
+            *(ppupaletteram + (pb.ppuaddrbus % 0x20)) = pb.ppudatabus;
         } else {
             cerr << "ERROR: PPU tried to write outside accessible memory: 0x" << hex << pb.ppuaddrbus << '\n';
             return 1;
         }
+
         break;
     default:
 // TODO (chris#4#): More memory mappers
@@ -157,9 +203,11 @@ int mmu_init(char *romfile) {
         cb.cpuaddrbus = 0x0000;
         cpumem_write();
 
-        pb.ppuaddrbus = 0x0003;
+        pb.ppuaddrbus = 0x0013;
         ppumem_read();
         pb.ppuaddrbus = 0x2000;
+        ppumem_write();
+        pb.ppuaddrbus = 0x2801;
         ppumem_write();
 
         return 0;

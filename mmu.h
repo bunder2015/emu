@@ -3,8 +3,8 @@
 
 int cpumem_read();
 int cpumem_write();
-int mmu_init(char *romfile);
 int ppumem_read();
 int ppumem_write();
+int mmu_init(char *romfile);
 
 #endif // MMU_H_INCLUDED

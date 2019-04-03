@@ -18,7 +18,7 @@ extern struct romheader {
 const uint8_t headermagic[4] = { 0x4E, 0x45, 0x53, 0x1A }; // "N", "E", "S", 0x1A
 const uint8_t headerempty[4] = { 0x00, 0x00, 0x00, 0x00 }; // Four empty bytes
 
-int rom_headerparse(romheader &rh);
 int rom_ingest(char *romfile, romheader &rh);
+int rom_headerparse(romheader &rh);
 
 #endif // ROM_H_INCLUDED

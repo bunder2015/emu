@@ -20,7 +20,6 @@ int main(int argc, char *argv[]) {
     if (mmu_init(romfile) == 0) {   // Load ROM file and initialize memory map
 // TODO (chris#6#): CPU/APU/PPU
 // TODO (chris#6#): Memory mapped IO in CPU
-// TODO (chris#6#): Initialize PPU SPRRAM in PPU
 // TODO (chris#7#): Bus conflicts
 // TODO (chris#7#): Open bus
     } else {

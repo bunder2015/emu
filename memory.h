@@ -8,6 +8,6 @@ uint8_t *chrrom;              // Cartridge CHR ROM, mapped at PPU 0x0000
 uint8_t consolevram[2048];    // 2kb console VRAM (nametables), mapped at PPU 0x2000
 uint8_t ppupaletteram[32];    // 32b PPU internal palette RAM, mapped at PPU 0x3F00
 
-uint8_t ppuoamram[256];       // 256b PPU internal OAM RAM, not mapped to PPU, accessible to CPU via memory-mapped registers
+uint8_t ppuoamram[256];       // 256b PPU internal OAM RAM (aka SPR RAM), not mapped to PPU, accessible to CPU via memory-mapped registers
 
 #endif // MEMORY_H_INCLUDED
