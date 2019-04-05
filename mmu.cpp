@@ -186,6 +186,7 @@ int mmu_init(char *romfile) {
             *     Horizontal or vertical mirroring
             */
             if (rh.prgramsize != 0) {   // This should also cover battery backed PRG RAM
+// TODO (chris#9#): Family BASIC does support PRG RAM, but sticking to NTSC-U for now
                 cerr << "ERROR: Mapper 0 does not support PRG RAM!\n";
                 return 1;
             }

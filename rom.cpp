@@ -155,7 +155,8 @@ int rom_headerparse(romheader &rh) {
             if (((*(rh.rombuffer + 9) & 0b00000001) == 0b00000001)  // If byte 9, bit 1 is 1
                     && ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000010)) {   // and byte 10, bit 2 is 1
                 rh.tvsystem = true;                                 // we are PAL
-                cout << "INFO: TV system: PAL\n";
+                cerr << "ERROR: PAL ROMs not yet implemented!\n";
+                return 1;
             } else if (((*(rh.rombuffer + 9) & 0b00000001) == 0b00000000)
                     && ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000000)) {
                 cout << "INFO: TV system: NTSC\n";
