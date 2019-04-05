@@ -183,7 +183,23 @@ int mmu_init(char *romfile) {
             /*  iNES mapper 0 (aka NROM)
             *     32kb PRG ROM to be mapped to CPU 0x8000 (if 16kb PRG ROM, mapped to 0x8000 and 0xC000)
             *     8kb CHR ROM to be mapped to PPU 0x0000
+            *     Horizontal or vertical mirroring
             */
+            if (rh.prgramsize != 0) {   // This should also cover battery backed PRG RAM
+                cerr << "ERROR: Mapper 0 does not support PRG RAM!\n";
+                return 1;
+            }
+
+            if (rh.chrramsize != 0) {
+                cerr << "ERROR: Mapper 0 does not support CHR RAM!\n";
+                return 1;
+            }
+
+            if (rh.fourscreenmode == true) {
+                cerr << "ERROR: Mapper 0 does not support four screen mirroring!\n";
+                return 1;
+            }
+
             prgrom = new uint8_t[rh.prgromsize];
             memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);     // Skip the header and copy PRG ROM data to its own container
             chrrom = new uint8_t[rh.chrromsize];

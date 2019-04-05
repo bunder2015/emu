@@ -92,15 +92,20 @@ int rom_headerparse(romheader &rh) {
 
             uint32_t romsize = rh.prgromsize + rh.chrromsize;       // ROM file should be as big as the header and its constituent ROMs
             if ((romsize + 16) != filesize) {                       // we have no way of knowing whether the boundary between ROMs is correct
-                cerr << "ERROR: File size (" << filesize << " bytes) does not match reported ROM size (" << romsize << " bytes + 16 byte header)\n";
+                cerr << "ERROR: File size (" << filesize << " bytes) does not match header reported ROM size (" << romsize << " bytes + 16 byte header)\n";
                 return 1;
             }
 
-// TODO (chris#8#): Make this AND instead of OR for strictness
             if (((*(rh.rombuffer + 6) & 0b00000010) == 0b00000010)  // If byte 6, bit 2 is 1
-                    || ((*(rh.rombuffer + 10) & 0b00010000) == 0b00010000)) {   // or byte 10, bit 16 is 1
+                    && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00010000)) {   // or byte 10, bit 16 is 1
                 rh.batterypresent = true;                           // we have a battery
                 cout << "INFO: Battery backed PRG RAM present\n";
+            } else if (((*(rh.rombuffer + 6) & 0b00000010) == 0b00000000)
+                    && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00000000)) {
+                // No battery backed PRG RAM
+            } else {
+                cerr << "ERROR: Battery presence mismatch, fix header bytes 6 and 10!\n";
+                return 1;
             }
 
             /* TODO (chris#9#): Fix bad ROMs
@@ -125,7 +130,7 @@ int rom_headerparse(romheader &rh) {
                 cout << "INFO: PRG RAM size: " << rh.prgramsize << " bytes total\n";
             } else {
                 if ((rh.batterypresent == true) && (rh.prgramsize == 0)) {          // Battery implies PRG RAM but you must specify it
-                    cerr << "ERROR: Battery without PRG RAM, fix header byte 8\n";  // if ROMs didn't lie, the only two games to fail here are StarTropics
+                    cerr << "ERROR: Battery without PRG RAM, fix header byte 8!\n";  // if ROMs didn't lie, the only two games to fail here are StarTropics
                     return 1;
                 }
 
@@ -147,13 +152,16 @@ int rom_headerparse(romheader &rh) {
                 cout << "INFO: Horizontal mirroring\n";
             }
 
-// TODO (chris#8#): Make this AND instead of OR for strictness
             if (((*(rh.rombuffer + 9) & 0b00000001) == 0b00000001)  // If byte 9, bit 1 is 1
-                    || ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000010)) {   // or byte 10, bit 2 is 1
+                    && ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000010)) {   // and byte 10, bit 2 is 1
                 rh.tvsystem = true;                                 // we are PAL
                 cout << "INFO: TV system: PAL\n";
-            } else {
+            } else if (((*(rh.rombuffer + 9) & 0b00000001) == 0b00000000)
+                    && ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000000)) {
                 cout << "INFO: TV system: NTSC\n";
+            } else {
+                cerr << "ERROR: NTSC/PAL mismatch, fix header bytes 9 and 10!\n";
+                return 1;
             }
 
             if ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000010) {    // If byte 10, bit 32 is 1
