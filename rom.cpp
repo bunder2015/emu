@@ -45,22 +45,22 @@ int rom_headerparse(romheader &rh) {
 
             // Stop right now if we see something we don't like
             if ((*(rh.rombuffer + 7) & 0b00000001) == 0b00000001) { // If byte 7 bit 1 is 1
-                cerr << "ERROR: VS ROMs are not supported\n";       // this is a VS System ROM
+                cerr << "ERROR: VS ROMs are not supported!\n";      // this is a VS System ROM
                 return 1;
-            } else if ((*(rh.rombuffer + 7) & 0b00000010) == 0b00000010) {      // If byte 7 bit 2 is 1
-                cerr << "ERROR: PC10 ROMs are not supported\n";     // this is a PlayChoice 10 ROM
+            } else if ((*(rh.rombuffer + 7) & 0b00000010) == 0b00000010) {  // If byte 7 bit 2 is 1
+                cerr << "ERROR: PC10 ROMs are not supported!\n";    // this is a PlayChoice 10 ROM
                 return 1;
-            } else if ((*(rh.rombuffer + 6) & 0b00000100) == 0b00000100) {      // If byte 6, bit 4 is 1
-                cerr << "ERROR: Trainers are not supported\n";      // we have a trainer which unmodified ROMs do not have
+            } else if ((*(rh.rombuffer + 6) & 0b00000100) == 0b00000100) {  // If byte 6, bit 4 is 1
+                cerr << "ERROR: Trainers are not supported!\n";     // we have a trainer which unmodified ROMs do not have
                 return 1;
             } else if ((*(rh.rombuffer + 9) & 0b11111110) > 0) {    // If byte 9, bits 2 through 128, are not 0
-                cerr << "ERROR: Reserved header byte 9 bits are not zero\n";
+                cerr << "ERROR: Reserved header byte 9 bits are not zero!\n";
                 return 1;
             } else if ((*(rh.rombuffer + 10) & 0b11001100) > 0) {   // If byte 10, bits 128,64,8,4 are not 0
-                cerr << "ERROR: Unused header byte 10 bits are not zero\n";
+                cerr << "ERROR: Unused header byte 10 bits are not zero!\n";
                 return 1;
             } else if ((*(rh.rombuffer + 11) & 0b11111111) > 0) {   // If byte 11 is not 0
-                cerr << "ERROR: Unused header byte 11 is not zero\n";
+                cerr << "ERROR: Unused header byte 11 is not zero!\n";
                 return 1;
             }
 
@@ -70,11 +70,11 @@ int rom_headerparse(romheader &rh) {
             rh.mapper = static_cast <uint16_t> (mapperlow + mapperhigh); // Combine both nibbles into a byte
             cout << "INFO: Mapper number " << rh.mapper << '\n';
 
-            rh.prgromsize = static_cast <uint32_t> ((*(rh.rombuffer + 4) & 0b11111111) * 16384); // PRG ROM is byte 4 * 16k in size
+            rh.prgromsize = static_cast <uint32_t> ((*(rh.rombuffer + 4) & 0b11111111) * 16384);    // PRG ROM is byte 4 * 16k in size
             cout << "INFO: PRG ROM size: " << rh.prgromsize << " bytes total\n";
 
             if ((*(rh.rombuffer + 5) & 0b11111111) > 0) {
-                rh.chrromsize = static_cast <uint32_t> ((*(rh.rombuffer + 5) & 0b11111111) * 8192);  // CHR ROM is byte 5 * 8k in size
+                rh.chrromsize = static_cast <uint32_t> ((*(rh.rombuffer + 5) & 0b11111111) * 8192); // CHR ROM is byte 5 * 8k in size
                 cout << "INFO: CHR ROM size: " << rh.chrromsize << " bytes total\n";
             } else {
                 /* TODO (chris#9#): The iNES v1 header does not specify CHR RAM size
@@ -92,7 +92,7 @@ int rom_headerparse(romheader &rh) {
 
             uint32_t romsize = rh.prgromsize + rh.chrromsize;       // ROM file should be as big as the header and its constituent ROMs
             if ((romsize + 16) != filesize) {                       // we have no way of knowing whether the boundary between ROMs is correct
-                cerr << "ERROR: File size (" << filesize << " bytes) does not match header reported ROM size (" << romsize << " bytes + 16 byte header)\n";
+                cerr << "ERROR: File size (" << filesize << " bytes) does not match header reported ROM size! (" << romsize << " bytes + 16 byte header)\n";
                 return 1;
             }
 
@@ -124,13 +124,13 @@ int rom_headerparse(romheader &rh) {
             *   Romance of the Three Kingdoms II: 32kb
             *  On second thought, we could always just fix the ROMs (except for StarTropics)
             */
-            rh.prgramsize = static_cast <uint32_t> ((*(rh.rombuffer + 8) & 0b11111111) * 8192);  // PRG RAM is byte 8 * 8kb in size
+            rh.prgramsize = static_cast <uint32_t> ((*(rh.rombuffer + 8) & 0b11111111) * 8192); // PRG RAM is byte 8 * 8kb in size
 
             if (rh.prgramsize > 0) {
                 cout << "INFO: PRG RAM size: " << rh.prgramsize << " bytes total\n";
             } else {
                 if ((rh.batterypresent == true) && (rh.prgramsize == 0)) {          // Battery implies PRG RAM but you must specify it
-                    cerr << "ERROR: Battery without PRG RAM, fix header byte 8!\n";  // if ROMs didn't lie, the only two games to fail here are StarTropics
+                    cerr << "ERROR: Battery without PRG RAM, fix header byte 8!\n"; // if ROMs didn't lie, the only two games to fail here are StarTropics
                     return 1;
                 }
 
@@ -172,7 +172,7 @@ int rom_headerparse(romheader &rh) {
             return 0;
         } else if (inesformat == 2) {
 // TODO (chris#5#): iNES v2 headers
-            cout << "ERROR: iNES header format 2 not yet implemented\n";
+            cout << "ERROR: iNES header format 2 not yet implemented!\n";
             return 1;
         } else {
             cerr << "ERROR: Not an iNES 0.7/1.0 or 2.0 file! (valid magic, format corrupted)\n";

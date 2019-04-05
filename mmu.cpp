@@ -45,14 +45,14 @@ int cpumem_read() {
             }
 
         } else {
-            cerr << "ERROR: CPU tried to read open bus, not yet implemented: 0x" << hex << cb.cpuaddrbus << '\n';
+            cerr << "ERROR: CPU tried to read open bus, not yet implemented! (0x" << hex << cb.cpuaddrbus << ")\n";
             return 1;
         }
 
         break;
     default:
 // TODO (chris#4#): More memory mappers
-        cerr << "ERROR: Memory mapper not yet implemented\n";       // We should never get here if mmu_init does its job
+        cerr << "ERROR: Memory mapper not yet implemented!\n";      // We should never get here if mmu_init does its job
         return 1;
     }
 
@@ -68,14 +68,14 @@ int cpumem_write() {
         if (cb.cpuaddrbus <= 0x1FFF) {                              // If we are writing to console WRAM
             *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus; // take the data off the bus and write it to the memory block
         } else {
-            cerr << "ERROR: CPU tried to write to non-writable memory: 0x" << hex << cb.cpuaddrbus << '\n';
+            cerr << "ERROR: CPU tried to write to non-writable memory! (0x" << hex << cb.cpuaddrbus << ")\n";
             return 1;
         }
 
         break;
     default:
 // TODO (chris#4#): More memory mappers
-        cerr << "ERROR: Memory mapper not yet implemented\n";       // We should never get here if mmu_init does its job
+        cerr << "ERROR: Memory mapper not yet implemented!\n";      // We should never get here if mmu_init does its job
         return 1;
     }
 
@@ -114,14 +114,14 @@ int ppumem_read() {
         } else if (pb.ppuaddrbus <= 0x3FFF) {           // PPU internal palette RAM
             pb.ppudatabus = *(ppupaletteram + (pb.ppuaddrbus % 0x20));
         } else {
-            cerr << "ERROR: PPU tried to read outside accessible memory: 0x" << hex << pb.ppuaddrbus << '\n';
+            cerr << "ERROR: PPU tried to read outside accessible memory! (0x" << hex << pb.ppuaddrbus << ")\n";
             return 1;
         }
 
         break;
     default:
 // TODO (chris#4#): More memory mappers
-        cerr << "ERROR: Memory mapper not yet implemented\n";
+        cerr << "ERROR: Memory mapper not yet implemented!\n";
         return 1;
     }
 
@@ -132,7 +132,7 @@ int ppumem_write() {
     switch (rh.mapper) {
     case 0:
         if (pb.ppuaddrbus <= 0x1FFF) {                  // CHR ROM (pattern table)
-            cerr << "ERROR: PPU tried to write to non-writable memory: 0x" << hex << pb.ppuaddrbus << '\n';
+            cerr << "ERROR: PPU tried to write to non-writable memory! (0x" << hex << pb.ppuaddrbus << ")\n";
         } else if (pb.ppuaddrbus <= 0x3EFF) {           // Console VRAM
             uint16_t offsetaddr = 0x0000;
             if (pb.ppuaddrbus >= 0x3000) {
@@ -160,14 +160,14 @@ int ppumem_write() {
         } else if (pb.ppuaddrbus <= 0x3FFF) {           // PPU internal palette RAM
             *(ppupaletteram + (pb.ppuaddrbus % 0x20)) = pb.ppudatabus;
         } else {
-            cerr << "ERROR: PPU tried to write outside accessible memory: 0x" << hex << pb.ppuaddrbus << '\n';
+            cerr << "ERROR: PPU tried to write outside accessible memory! (0x" << hex << pb.ppuaddrbus << ")\n";
             return 1;
         }
 
         break;
     default:
 // TODO (chris#4#): More memory mappers
-        cerr << "ERROR: Memory mapper not yet implemented\n";
+        cerr << "ERROR: Memory mapper not yet implemented!\n";
         return 1;
     }
 
@@ -207,7 +207,7 @@ int mmu_init(char *romfile) {
             break;
         default:
 // TODO (chris#4#): More memory mappers
-            cerr << "ERROR: Memory mapper not yet implemented\n";
+            cerr << "ERROR: Memory mapper not yet implemented!\n";
             return 1;
         }
 
