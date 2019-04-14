@@ -1,8 +1,13 @@
 #include <iostream>     // for std::cerr
 
+#include "cpu.h"        // for cpubus cpu_init
 #include "mmu.h"        // for mmu_init
+#include "ppu.h"        // for ppubus ppu_init
 
 using std::cerr;
+
+cpubus cb;
+ppubus pb;
 
 int main(int argc, char *argv[]) {
     char *romfile;          // ROM filename for input
@@ -17,9 +22,11 @@ int main(int argc, char *argv[]) {
         romfile = argv[1];  // Try to load this as a ROM file
     }
 
-    if (mmu_init(romfile) == 0) {   // Load ROM file and initialize memory map
-// TODO (chris#6#): CPU/APU/PPU
-// TODO (chris#6#): Memory mapped IO in CPU
+    if (mmu_init(romfile) == 0  // Load ROM file and initialize memory map
+        && cpu_init(cb) == 0    // Initialize CPU registers
+        && ppu_init(pb)) {      // Initialize PPU
+// TODO (chris#2#): CPU/APU/PPU
+// TODO (chris#3#): Memory mapped IO in CPU
 // TODO (chris#7#): Bus conflicts
 // TODO (chris#7#): Open bus
     } else {

@@ -66,8 +66,8 @@ int rom_headerparse(romheader &rh) {
 
             uint16_t mapperlow = ((*(rh.rombuffer + 6) & 0b11110000) >> 4);    // Lower nibble is the upper nibble of byte 6
             uint16_t mapperhigh = ((*(rh.rombuffer + 7) & 0b11110000) >> 4);   // Upper nibble is the upper nibble of byte 7
-            mapperhigh = static_cast <uint16_t> (mapperhigh << 4);       // Move mapperhigh back to the upper nibble
-            rh.mapper = static_cast <uint16_t> (mapperlow + mapperhigh); // Combine both nibbles into a byte
+            mapperhigh = static_cast <uint16_t> (mapperhigh << 4);  // Move mapperhigh back to the upper nibble
+            rh.mapper = (mapperlow | mapperhigh);                   // Combine both nibbles into a byte
             cout << "INFO: Mapper number " << rh.mapper << '\n';
 
             rh.prgromsize = static_cast <uint32_t> ((*(rh.rombuffer + 4) & 0b11111111) * 16384);    // PRG ROM is byte 4 * 16k in size
@@ -101,8 +101,8 @@ int rom_headerparse(romheader &rh) {
                 rh.batterypresent = true;                           // we have a battery
                 cout << "INFO: Battery backed PRG RAM present\n";
             } else if (((*(rh.rombuffer + 6) & 0b00000010) == 0b00000000)
-                    && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00000000)) {
-                // No battery backed PRG RAM
+                       && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00000000)) {
+                rh.batterypresent = false;
             } else {
                 cerr << "ERROR: Battery presence mismatch, fix header bytes 6 and 10!\n";
                 return 1;
@@ -158,7 +158,7 @@ int rom_headerparse(romheader &rh) {
                 cerr << "ERROR: PAL ROMs not yet implemented!\n";
                 return 1;
             } else if (((*(rh.rombuffer + 9) & 0b00000001) == 0b00000000)
-                    && ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000000)) {
+                       && ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000000)) {
                 cout << "INFO: TV system: NTSC\n";
             } else {
                 cerr << "ERROR: NTSC/PAL mismatch, fix header bytes 9 and 10!\n";

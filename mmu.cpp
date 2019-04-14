@@ -11,9 +11,7 @@ using std::cerr;
 using std::fill;
 using std::hex;
 
-cpubus cb;
 romheader rh;
-ppubus pb;
 
 void consoleram_init() {
     fill (consolewram, (consolewram + 0x800), 0xFF);    // Initialize console WRAM
@@ -22,7 +20,7 @@ void consoleram_init() {
     fill (ppuoamram, (ppuoamram + 0x100), 0xFF);        // Initialize PPU internal OAM RAM (aka SPR RAM)
 }
 
-int cpumem_read() {
+int cpumem_read(cpubus &cb) {
     switch (rh.mapper) {
     case 0:
         /*  iNES mapper 0 (aka NROM)
@@ -59,7 +57,7 @@ int cpumem_read() {
     return 0;
 }
 
-int cpumem_write() {
+int cpumem_write(cpubus &cb) {
     switch (rh.mapper) {
     case 0:
         /*  iNES mapper 0 (aka NROM)
@@ -82,7 +80,7 @@ int cpumem_write() {
     return 0;
 }
 
-int ppumem_read() {
+int ppumem_read(ppubus &pb) {
     switch (rh.mapper) {
     case 0:
         if (pb.ppuaddrbus <= 0x1FFF) {                  // CHR ROM (pattern table)
@@ -128,7 +126,7 @@ int ppumem_read() {
     return 0;
 }
 
-int ppumem_write() {
+int ppumem_write(ppubus &pb) {
     switch (rh.mapper) {
     case 0:
         if (pb.ppuaddrbus <= 0x1FFF) {                  // CHR ROM (pattern table)
@@ -213,19 +211,6 @@ int mmu_init(char *romfile) {
         }
 
         delete[] rh.rombuffer;  // Free rombuffer, we don't need it anymore after this point
-
-// FIXME (chris#6#): Remove CPU/PPU testing code
-        cb.cpuaddrbus = 0x8002;
-        cpumem_read();
-        cb.cpuaddrbus = 0x0000;
-        cpumem_write();
-
-        pb.ppuaddrbus = 0x0013;
-        ppumem_read();
-        pb.ppuaddrbus = 0x2000;
-        ppumem_write();
-        pb.ppuaddrbus = 0x2801;
-        ppumem_write();
 
         return 0;
     } else {
