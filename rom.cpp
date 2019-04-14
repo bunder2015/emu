@@ -128,7 +128,8 @@ int rom_headerparse(romheader &rh) {
             if (rh.prgramsize > 0) {
                 cout << "INFO: PRG RAM size: " << rh.prgramsize << " bytes total\n";
             } else {
-                if ((rh.batterypresent == true) && (rh.prgramsize == 0)) {          // Battery implies PRG RAM but you must specify it
+                if ((rh.batterypresent == true)                     // Battery implies PRG RAM
+                        && (rh.prgramsize == 0)) {                  // but you must specify it
                     cerr << "ERROR: Battery without PRG RAM, fix header byte 8!\n"; // if ROMs didn't lie, the only two games to fail here are StarTropics
                     return 1;
                 }

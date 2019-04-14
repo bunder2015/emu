@@ -6,7 +6,7 @@
 extern struct cpubus {
     uint16_t cpuaddrbus = 0x0000;
     uint8_t cpudatabus = 0x00;
-}cpubus_t;
+} cpubus_t;
 
 extern struct cpuregs {
     uint8_t a = 0x00;       // Accumulator
@@ -22,7 +22,7 @@ extern struct cpuregs {
     bool u = true;              // Unused
     bool v = false;             // Overflow
     bool n = false;             // Negative
-}cpuregs_t;
+} cpuregs_t;
 
 int cpu_init(cpubus &cb);
 

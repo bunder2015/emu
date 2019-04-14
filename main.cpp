@@ -22,9 +22,9 @@ int main(int argc, char *argv[]) {
         romfile = argv[1];  // Try to load this as a ROM file
     }
 
-    if (mmu_init(romfile) == 0  // Load ROM file and initialize memory map
-        && cpu_init(cb) == 0    // Initialize CPU registers
-        && ppu_init(pb)) {      // Initialize PPU
+    if ((mmu_init(romfile) == 0)  // Load ROM file and initialize memory map
+            && (cpu_init(cb) == 0)    // Initialize CPU registers
+            && (ppu_init(pb) == 0)) { // Initialize PPU
 // TODO (chris#2#): CPU/APU/PPU
 // TODO (chris#3#): Memory mapped IO in CPU
 // TODO (chris#7#): Bus conflicts

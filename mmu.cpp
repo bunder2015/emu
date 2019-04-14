@@ -173,7 +173,8 @@ int ppumem_write(ppubus &pb) {
 }
 
 int mmu_init(char *romfile) {
-    if ((rom_ingest(romfile, rh) == 0) && (rom_headerparse(rh) == 0)) { // Load the ROM into memory
+    if ((rom_ingest(romfile, rh) == 0)          // Load the ROM into memory
+            && (rom_headerparse(rh) == 0)) {    // and parse the header
         consoleram_init();
 
         switch (rh.mapper) {

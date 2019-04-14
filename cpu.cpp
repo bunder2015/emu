@@ -1,5 +1,10 @@
-#include "cpu.h"    // for cpubus
+#include <iostream> // for std::cout std::hex
+
+#include "cpu.h"    // for cpubus cpuregs
 #include "mmu.h"    // for cpumem_read cpumem_write
+
+using std::cout;
+using std::hex;
 
 cpuregs cr;
 
@@ -12,12 +17,8 @@ int cpu_init(cpubus &cb) {
     cpumem_read(cb);
     uint8_t pchigh = cb.cpudatabus;
     cr.pc = static_cast <uint16_t> (pchigh << 8 | pclow);
-
-// FIXME (chris#6#): Remove CPU testing code
-    cb.cpuaddrbus = 0x8002;
-    cpumem_read(cb);
-    cb.cpuaddrbus = 0x0000;
-    cpumem_write(cb);
+// TODO (chris#7#): Check whether CPU boot PC is in ROM space
+    cout << "INFO: CPU execution will begin at 0x" << hex << cr.pc << '\n';
 
     return 0;
 }
