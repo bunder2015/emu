@@ -64,10 +64,9 @@ int rom_headerparse(romheader &rh) {
                 return 1;
             }
 
-            uint16_t mapperlow = ((*(rh.rombuffer + 6) & 0b11110000) >> 4);    // Lower nibble is the upper nibble of byte 6
-            uint16_t mapperhigh = ((*(rh.rombuffer + 7) & 0b11110000) >> 4);   // Upper nibble is the upper nibble of byte 7
-            mapperhigh = static_cast <uint16_t> (mapperhigh << 4);  // Move mapperhigh back to the upper nibble
-            rh.mapper = (mapperlow | mapperhigh);                   // Combine both nibbles into a byte
+            uint8_t mapperlow = ((*(rh.rombuffer + 6) & 0b11110000) >> 4);      // Lower nibble is the upper nibble of byte 6
+            uint8_t mapperhigh = ((*(rh.rombuffer + 7) & 0b11110000) >> 4);     // Upper nibble is the upper nibble of byte 7
+            rh.mapper = static_cast <uint16_t> (mapperhigh << 4 | mapperlow);   // Combine both nibbles into a byte
             cout << "INFO: Mapper number " << rh.mapper << '\n';
 
             rh.prgromsize = static_cast <uint32_t> ((*(rh.rombuffer + 4) & 0b11111111) * 16384);    // PRG ROM is byte 4 * 16k in size
