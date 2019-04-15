@@ -253,7 +253,7 @@ int mmu_init(char *romfile) {
             return 1;
         }
 
-        // Free rombuffer, we don't need it anymore after this point
+        // We don't need rombuffer anymore
         delete[] rh.rombuffer;
 
         return 0;

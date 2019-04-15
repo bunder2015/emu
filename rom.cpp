@@ -123,7 +123,7 @@ int rom_headerparse(romheader &rh) {
                 cout << "INFO: CHR RAM size: " << rh.chrramsize << " bytes total\n";
             }
 
-            /*  ROM file should be as big as the header and its constituent ROMs
+            /*  The ROM file should be as big as the header and its constituent ROMs
             *   we have no way of knowing whether the boundary between ROMs is correct
             */
             uint32_t romsize = rh.prgromsize + rh.chrromsize;
@@ -180,7 +180,7 @@ int rom_headerparse(romheader &rh) {
                     return 1;
                 }
 
-                // There is no way to know if we need a PRG RAM without battery bit
+                // There is no way to know if we need a PRG RAM without the battery bit
                 cout << "INFO: No PRG RAM present\n";
             }
 
@@ -227,7 +227,7 @@ int rom_headerparse(romheader &rh) {
 
             if ((*(rh.rombuffer + 10) & 0b00000010) == 0b00000010) {
                 /*  If byte 10, bit 32 is 1
-                *   we have bus conflicts to be careful about
+                *   We have bus conflicts to be careful about
                 *   if we decide to emulate them
                 */
                 rh.busconflicts = true;
