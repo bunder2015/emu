@@ -1,8 +1,10 @@
 #ifndef MMU_H_INCLUDED
 #define MMU_H_INCLUDED
 
-#include "cpu.h"    // for cpubus
-#include "ppu.h"    // for ppubus
+// for cpubus
+#include "cpu.h"
+// for ppubus
+#include "ppu.h"
 
 int cpumem_read(cpubus &cb);
 int cpumem_write(cpubus &cb);

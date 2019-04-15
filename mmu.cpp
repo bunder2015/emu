@@ -1,6 +1,9 @@
-#include <algorithm>    // for std::fill
-#include <cstring>      // for memcpy
-#include <iostream>     // for std::cerr std::hex
+// for std::fill
+#include <algorithm>
+// for memcpy
+#include <cstring>
+// for std::cerr std::hex
+#include <iostream>
 
 #include "cpu.h"        // for cpubus
 #include "memory.h"     // for consolewram consolevram prgrom chrrom ppuoamram ppupaletteram

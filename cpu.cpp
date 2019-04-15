@@ -1,7 +1,10 @@
-#include <iostream> // for std::cerr std::cout std::hex
+// for std::cerr std::cout std::hex
+#include <iostream>
 
-#include "cpu.h"    // for cpubus cpuregs
-#include "mmu.h"    // for cpumem_read cpumem_write
+// for cpubus cpuregs
+#include "cpu.h"
+// for cpumem_read cpumem_write
+#include "mmu.h"
 
 using std::cerr;
 using std::cout;

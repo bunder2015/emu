@@ -9,19 +9,34 @@ extern struct cpubus {
 } cpubus_t;
 
 extern struct cpuregs {
-    uint8_t a = 0x00;       // Accumulator
-    uint8_t x = 0x00;       // X register
-    uint8_t y = 0x00;       // Y register
-    uint8_t sp = 0xFD;      // Stack Pointer
-    uint16_t pc = 0x0000;   // Program Counter
-    bool c = false;             // Carry
-    bool z = false;             // Zero
-    bool i = true;              // Interrput
-    bool d = false;             // Decimal (unused)
-    bool b = true;              // Breakpoint (unused)
-    bool u = true;              // Unused
-    bool v = false;             // Overflow
-    bool n = false;             // Negative
+    // Accumulator
+    uint8_t a = 0x00;
+    // X index register
+    uint8_t x = 0x00;
+    // Y index register
+    uint8_t y = 0x00;
+    // Stack Pointer
+    uint8_t sp = 0xFD;
+    // Program Counter
+    uint16_t pc = 0x0000;
+
+    // Status Flags
+    // Carry
+    bool c = false;
+    // Zero
+    bool z = false;
+    // Interrupt
+    bool i = true;
+    // Decimal (unused)
+    bool d = false;
+    // Breakpoint (unused)
+    bool b = true;
+    // Unused
+    bool u = true;
+    // Overflow
+    bool v = false;
+    // Negative
+    bool n = false;
 } cpuregs_t;
 
 int cpu_init(cpubus &cb);

@@ -1,8 +1,12 @@
-#include <iostream>     // for std::cerr std::cout
+// for std::cerr std::cout
+#include <iostream>
 
-#include "cpu.h"        // for cpubus cpu_init
-#include "mmu.h"        // for mmu_init
-#include "ppu.h"        // for ppubus ppu_init
+// for cpubus cpu_init
+#include "cpu.h"
+// for mmu_init
+#include "mmu.h"
+// for ppubus ppu_init
+#include "ppu.h"
 
 using std::cerr;
 using std::cout;

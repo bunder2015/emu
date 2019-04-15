@@ -1,8 +1,12 @@
-#include <cstring>      // for memcmp
-#include <fstream>      // for std::ifstream
-#include <iostream>     // for std::cerr std::cout
+// for memcmp
+#include <cstring>
+// for std::ifstream
+#include <fstream>
+// for std::cerr std::cout
+#include <iostream>
 
-#include "rom.h"        // for headermagic headerempty
+// for headermagic headerempty
+#include "rom.h"
 
 using std::cerr;
 using std::cout;
