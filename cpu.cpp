@@ -1,8 +1,9 @@
-#include <iostream> // for std::cout std::hex
+#include <iostream> // for std::cerr std::cout std::hex
 
 #include "cpu.h"    // for cpubus cpuregs
 #include "mmu.h"    // for cpumem_read cpumem_write
 
+using std::cerr;
 using std::cout;
 using std::hex;
 
@@ -17,8 +18,12 @@ int cpu_init(cpubus &cb) {
     cpumem_read(cb);
     uint8_t pchigh = cb.cpudatabus;
     cr.pc = static_cast <uint16_t> (pchigh << 8 | pclow);
-// TODO (chris#7#): Check whether CPU boot PC is in ROM space
-    cout << "INFO: CPU execution will begin at 0x" << hex << cr.pc << '\n';
 
-    return 0;
+    if (cr.pc <= 0x8000) {
+        cerr << "ERROR: CPU boot PC is not in PRG ROM memory!\n";
+        return 1;
+    } else {
+        cout << "INFO: CPU execution will begin at 0x" << hex << cr.pc << '\n';
+        return 0;
+    }
 }

@@ -14,10 +14,15 @@ using std::hex;
 romheader rh;
 
 void consoleram_init() {
-    fill (consolewram, (consolewram + 0x800), 0xFF);    // Initialize console WRAM
-    fill (consolevram, (consolevram + 0x800), 0xFF);    // Initialize console VRAM
-    fill (ppupaletteram, (ppupaletteram + 0x20), 0xFF); // Initialize PPU internal palette RAM
-    fill (ppuoamram, (ppuoamram + 0x100), 0xFF);        // Initialize PPU internal OAM RAM (aka SPR RAM)
+    /*  Initialize console WRAM
+    *   Initialize console VRAM
+    *   Initialize PPU internal palette RAM
+    *   Initialize PPU internal OAM RAM (aka SPR RAM)
+    */
+    fill (consolewram, (consolewram + 0x800), 0xFF);
+    fill (consolevram, (consolevram + 0x800), 0xFF);
+    fill (ppupaletteram, (ppupaletteram + 0x20), 0xFF);
+    fill (ppuoamram, (ppuoamram + 0x100), 0xFF);
 }
 
 int cpumem_read(cpubus &cb) {
@@ -27,17 +32,31 @@ int cpumem_read(cpubus &cb) {
         *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
         *     32kb PRG ROM mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
         */
-        if (cb.cpuaddrbus <= 0x1FFF) {                              // If we are reading the console WRAM
-            cb.cpudatabus = *(consolewram + (cb.cpuaddrbus % 0x800)); // put the data on the bus for the CPU to read
-        } else if (cb.cpuaddrbus >= 0x8000) {                       // If we are reading from cartridge ROM
-            if (rh.prgromsize == 32768) {                           // and we are a 32kb PRG ROM
-                cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));   // put the data on the bus for the CPU to read
+        if (cb.cpuaddrbus <= 0x1FFF) {
+            /*  If we are reading the console WRAM
+            *   put the data on the bus for the CPU to read
+            */
+            cb.cpudatabus = *(consolewram + (cb.cpuaddrbus % 0x800));
+        } else if (cb.cpuaddrbus >= 0x8000) {
+            if (rh.prgromsize == 32768) {
+                /*  If we are reading from cartridge ROM
+                *   and we are a 32kb PRG ROM
+                *   put the data on the bus for the CPU to read
+                */
+                cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));
             } else {
-                uint16_t offsetaddr = cb.cpuaddrbus % 0x8000;       // Determine whether we are using 0x8000 or 0xC000
-                if (offsetaddr <= 0x3FFF) {                         // If we used 0x8000
-                    cb.cpudatabus = *(prgrom + offsetaddr);         // put the 0x8000 data on the bus for the CPU to read
-                } else {                                            // If we used 0xC000
-                    cb.cpudatabus = *(prgrom + (offsetaddr - 0x4000));  // put the mirrored 0x8000 data on the bus for the CPU to read
+                // Determine whether we are using 0x8000 or 0xC000
+                uint16_t offsetaddr = cb.cpuaddrbus % 0x8000;
+                if (offsetaddr <= 0x3FFF) {
+                    /*  If we used 0x8000
+                    *   put the 0x8000 data on the bus for the CPU to read
+                    */
+                    cb.cpudatabus = *(prgrom + offsetaddr);
+                } else {
+                    /*  If we used 0xC000
+                    *   put the mirrored 0x8000 data on the bus for the CPU to read
+                    */
+                    cb.cpudatabus = *(prgrom + (offsetaddr - 0x4000));
                 }
 
             }
@@ -50,7 +69,8 @@ int cpumem_read(cpubus &cb) {
         break;
     default:
 // TODO (chris#4#): More memory mappers
-        cerr << "ERROR: Memory mapper not yet implemented!\n";      // We should never get here if mmu_init does its job
+        // We should never get here if mmu_init does its job
+        cerr << "ERROR: Memory mapper not yet implemented!\n";
         return 1;
     }
 
@@ -63,8 +83,11 @@ int cpumem_write(cpubus &cb) {
         /*  iNES mapper 0 (aka NROM)
         *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
         */
-        if (cb.cpuaddrbus <= 0x1FFF) {                              // If we are writing to console WRAM
-            *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus; // take the data off the bus and write it to the memory block
+        if (cb.cpuaddrbus <= 0x1FFF) {
+            /*  If we are writing to console WRAM
+            *   take the data off the bus and write it to the memory block
+            */
+            *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus;
         } else {
             cerr << "ERROR: CPU tried to write to non-writable memory! (0x" << hex << cb.cpuaddrbus << ")\n";
             return 1;
@@ -73,7 +96,8 @@ int cpumem_write(cpubus &cb) {
         break;
     default:
 // TODO (chris#4#): More memory mappers
-        cerr << "ERROR: Memory mapper not yet implemented!\n";      // We should never get here if mmu_init does its job
+        // We should never get here if mmu_init does its job
+        cerr << "ERROR: Memory mapper not yet implemented!\n";
         return 1;
     }
 
@@ -83,9 +107,11 @@ int cpumem_write(cpubus &cb) {
 int ppumem_read(ppubus &pb) {
     switch (rh.mapper) {
     case 0:
-        if (pb.ppuaddrbus <= 0x1FFF) {                  // CHR ROM (pattern table)
+        if (pb.ppuaddrbus <= 0x1FFF) {
+            // CHR ROM (pattern table)
             pb.ppudatabus = *(chrrom + pb.ppuaddrbus);
-        } else if (pb.ppuaddrbus <= 0x3EFF) {           // Console VRAM
+        } else if (pb.ppuaddrbus <= 0x3EFF) {
+            // Console VRAM
             uint16_t offsetaddr = 0x0000;
             if (pb.ppuaddrbus >= 0x3000) {
                 offsetaddr = static_cast<uint16_t> (pb.ppuaddrbus - 0x1000);
@@ -93,7 +119,8 @@ int ppumem_read(ppubus &pb) {
                 offsetaddr = pb.ppuaddrbus;
             }
 
-            if (rh.mirrormode == 0) {    // Horizontal
+            if (rh.mirrormode == 0) {
+                // Horizontal
                 if (offsetaddr >= 0x2400) {
                     offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
                 } else if (offsetaddr >= 0x2C00) {
@@ -101,7 +128,8 @@ int ppumem_read(ppubus &pb) {
                 }
 
                 pb.ppudatabus = *(consolewram + (offsetaddr % 0x2000));
-            } else {                    // Vertical
+            } else {
+                // Vertical
                 if (offsetaddr >= 0x2800) {
                     offsetaddr = static_cast<uint16_t> (offsetaddr - 0x800);
                 }
@@ -109,7 +137,8 @@ int ppumem_read(ppubus &pb) {
                 pb.ppudatabus = *(consolewram + (offsetaddr % 0x2000));
             }
 
-        } else if (pb.ppuaddrbus <= 0x3FFF) {           // PPU internal palette RAM
+        } else if (pb.ppuaddrbus <= 0x3FFF) {
+            // PPU internal palette RAM
             pb.ppudatabus = *(ppupaletteram + (pb.ppuaddrbus % 0x20));
         } else {
             cerr << "ERROR: PPU tried to read outside accessible memory! (0x" << hex << pb.ppuaddrbus << ")\n";
@@ -119,6 +148,7 @@ int ppumem_read(ppubus &pb) {
         break;
     default:
 // TODO (chris#4#): More memory mappers
+        // We should never get here if mmu_init does its job
         cerr << "ERROR: Memory mapper not yet implemented!\n";
         return 1;
     }
@@ -129,9 +159,11 @@ int ppumem_read(ppubus &pb) {
 int ppumem_write(ppubus &pb) {
     switch (rh.mapper) {
     case 0:
-        if (pb.ppuaddrbus <= 0x1FFF) {                  // CHR ROM (pattern table)
+        if (pb.ppuaddrbus <= 0x1FFF) {
+            // CHR ROM (pattern table)
             cerr << "ERROR: PPU tried to write to non-writable memory! (0x" << hex << pb.ppuaddrbus << ")\n";
-        } else if (pb.ppuaddrbus <= 0x3EFF) {           // Console VRAM
+        } else if (pb.ppuaddrbus <= 0x3EFF) {
+            // Console VRAM
             uint16_t offsetaddr = 0x0000;
             if (pb.ppuaddrbus >= 0x3000) {
                 offsetaddr = static_cast<uint16_t> (pb.ppuaddrbus - 0x1000);
@@ -139,7 +171,8 @@ int ppumem_write(ppubus &pb) {
                 offsetaddr = pb.ppuaddrbus;
             }
 
-            if (rh.mirrormode == 0) {    // Horizontal
+            if (rh.mirrormode == 0) {
+                // Horizontal
                 if (offsetaddr >= 0x2400) {
                     offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
                 } else if (offsetaddr >= 0x2C00) {
@@ -147,7 +180,8 @@ int ppumem_write(ppubus &pb) {
                 }
 
                 *(consolevram + (offsetaddr % 0x2000)) = pb.ppudatabus;
-            } else {                    // Vertical
+            } else {
+                // Vertical
                 if (offsetaddr >= 0x2800) {
                     offsetaddr = static_cast<uint16_t> (offsetaddr - 0x800);
                 }
@@ -155,7 +189,8 @@ int ppumem_write(ppubus &pb) {
                 *(consolevram + (offsetaddr % 0x2000)) = pb.ppudatabus;
             }
 
-        } else if (pb.ppuaddrbus <= 0x3FFF) {           // PPU internal palette RAM
+        } else if (pb.ppuaddrbus <= 0x3FFF) {
+            // PPU internal palette RAM
             *(ppupaletteram + (pb.ppuaddrbus % 0x20)) = pb.ppudatabus;
         } else {
             cerr << "ERROR: PPU tried to write outside accessible memory! (0x" << hex << pb.ppuaddrbus << ")\n";
@@ -165,6 +200,7 @@ int ppumem_write(ppubus &pb) {
         break;
     default:
 // TODO (chris#4#): More memory mappers
+        // We should never get here if mmu_init does its job
         cerr << "ERROR: Memory mapper not yet implemented!\n";
         return 1;
     }
@@ -173,8 +209,11 @@ int ppumem_write(ppubus &pb) {
 }
 
 int mmu_init(char *romfile) {
-    if ((rom_ingest(romfile, rh) == 0)          // Load the ROM into memory
-            && (rom_headerparse(rh) == 0)) {    // and parse the header
+    /*  Load the ROM into memory
+    *   and parse the header
+    */
+    if ((rom_ingest(romfile, rh) == 0)
+            && (rom_headerparse(rh) == 0)) {
         consoleram_init();
 
         switch (rh.mapper) {
@@ -184,8 +223,9 @@ int mmu_init(char *romfile) {
             *     8kb CHR ROM to be mapped to PPU 0x0000
             *     Horizontal or vertical mirroring
             */
-            if (rh.prgramsize != 0) {   // This should also cover battery backed PRG RAM
+            if (rh.prgramsize != 0) {
 // TODO (chris#9#): Family BASIC does support PRG RAM, but sticking to NTSC-U for now
+                // This should also cover battery backed PRG RAM
                 cerr << "ERROR: Mapper 0 does not support PRG RAM!\n";
                 return 1;
             }
@@ -201,9 +241,11 @@ int mmu_init(char *romfile) {
             }
 
             prgrom = new uint8_t[rh.prgromsize];
-            memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);     // Skip the header and copy PRG ROM data to its own container
+            // Skip the header and copy PRG ROM data to its own container
+            memcpy(prgrom, (rh.rombuffer + 16), rh.prgromsize);
             chrrom = new uint8_t[rh.chrromsize];
-            memcpy(chrrom, (rh.rombuffer + 16 + rh.prgromsize), rh.chrromsize); // Skip the header and PRG ROM and copy CHR ROM to its own container
+            // Skip the header and PRG ROM and copy CHR ROM to its own container
+            memcpy(chrrom, (rh.rombuffer + 16 + rh.prgromsize), rh.chrromsize);
             break;
         default:
 // TODO (chris#4#): More memory mappers
@@ -211,10 +253,12 @@ int mmu_init(char *romfile) {
             return 1;
         }
 
-        delete[] rh.rombuffer;  // Free rombuffer, we don't need it anymore after this point
+        // Free rombuffer, we don't need it anymore after this point
+        delete[] rh.rombuffer;
 
         return 0;
     } else {
-        return 1;   // rom_ingest or rom_headerparse failed
+        // rom_ingest rom_headerparse failed
+        return 1;
     }
 }
