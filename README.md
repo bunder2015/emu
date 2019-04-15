@@ -11,6 +11,8 @@ not supported.  Trainers are not supported.
 
 At this time only mapper 0 is supported.
 
+At this time only iNES version 0.7/1.0 is supported.
+
 The iNES format has been around since the early-to-mid 1990s, and many ROMs are
 wrong. This emulator is being written to adhere to maximum strictness, so if
 your ROM doesn't load, try fixing the header.
@@ -22,3 +24,8 @@ through 15
 - Battery bit set without setting PRG RAM size
 - Battery bit being set in byte 6 and not byte 10 (or vice-versa)
 - NTSC/PAL bit being set in byte 9 and not byte 10 (or vice-versa)
+
+It may seem redundant to require both bits set for battery and NTSC/PAL but 
+requiring both rules out whether a ROM really needs it or not since both 
+options have two bits where the toggle could take place.
+
