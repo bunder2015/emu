@@ -8,7 +8,7 @@ uint8_t *prgrom;
 
 // Cartridge CHR ROM, mapped at PPU 0x0000
 uint8_t *chrrom;
-// 2kb console VRAM (nametables), mapped at PPU 0x2000
+// 2kb console VRAM (nametables), mapped at PPU 0x2000 (mirrored horizontally or vertically)
 uint8_t consolevram[2048];
 // 32b PPU internal palette RAM, mapped at PPU 0x3F00
 uint8_t ppupaletteram[32];

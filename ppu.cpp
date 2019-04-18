@@ -1,7 +1,7 @@
-// for ppubus
-#include "ppu.h"
 // for ppumem_read ppumem_write
 #include "mmu.h"
+// for ppubus
+#include "ppu.h"
 
 int ppu_init(ppubus &pb) {
 // FIXME (chris#6#): Remove PPU testing code

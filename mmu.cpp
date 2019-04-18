@@ -5,10 +5,14 @@
 // for std::cerr std::hex
 #include <iostream>
 
-#include "cpu.h"        // for cpubus
-#include "memory.h"     // for consolewram consolevram prgrom chrrom ppuoamram ppupaletteram
-#include "ppu.h"        // for ppubus
-#include "rom.h"        // for rom_ingest rom_headerparse romheader
+// for cpubus
+#include "cpu.h"
+// for consolewram consolevram prgrom chrrom ppuoamram ppupaletteram
+#include "memory.h"
+// for ppubus
+#include "ppu.h"
+// for rom_ingest rom_headerparse romheader
+#include "rom.h"
 
 using std::cerr;
 using std::fill;
@@ -110,11 +114,20 @@ int cpumem_write(cpubus &cb) {
 int ppumem_read(ppubus &pb) {
     switch (rh.mapper) {
     case 0:
+        /*  iNES mapper 0 (aka NROM)
+        *     8kb cartridge CHR ROM, mapped at PPU 0x0000
+        *     2kb console VRAM (nametables), mapped at PPU 0x2000 (mirrored horizontally or vertically)
+        *     32b PPU internal palette RAM, mapped at PPU 0x3F00
+        */
         if (pb.ppuaddrbus <= 0x1FFF) {
-            // CHR ROM (pattern table)
+            /*  If we are reading the CHR ROM
+            *   put the data on the bus for the CPU to read
+            */
             pb.ppudatabus = *(chrrom + pb.ppuaddrbus);
         } else if (pb.ppuaddrbus <= 0x3EFF) {
-            // Console VRAM
+            /*  If we are reading from the console VRAM
+            *   we first deduct the first upper mirror
+            */
             uint16_t offsetaddr = 0x0000;
             if (pb.ppuaddrbus >= 0x3000) {
                 offsetaddr = static_cast<uint16_t> (pb.ppuaddrbus - 0x1000);
@@ -123,25 +136,31 @@ int ppumem_read(ppubus &pb) {
             }
 
             if (rh.mirrormode == 0) {
-                // Horizontal
+                /* If we are horizontal mirroring
+                *  we then deduct the nametable's mirror
+                */
                 if (offsetaddr >= 0x2400) {
                     offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
                 } else if (offsetaddr >= 0x2C00) {
                     offsetaddr = static_cast<uint16_t> (offsetaddr - 0x400);
                 }
-
+                // Put the data on the bus for the PPU to read
                 pb.ppudatabus = *(consolewram + (offsetaddr % 0x2000));
             } else {
-                // Vertical
+                /* If we are vertical mirroring
+                *  we then deduct both nametable's mirrors
+                */
                 if (offsetaddr >= 0x2800) {
                     offsetaddr = static_cast<uint16_t> (offsetaddr - 0x800);
                 }
-
+                // Put the data on the bus for the PPU to read
                 pb.ppudatabus = *(consolewram + (offsetaddr % 0x2000));
             }
 
         } else if (pb.ppuaddrbus <= 0x3FFF) {
-            // PPU internal palette RAM
+            /* If we are reading from the PPU internal palette RAM
+            *  Put the 32 bit mirrored $3F00 data on the bus
+            */
             pb.ppudatabus = *(ppupaletteram + (pb.ppuaddrbus % 0x20));
         } else {
             cerr << "ERROR: PPU tried to read outside accessible memory! (0x" << hex << pb.ppuaddrbus << ")\n";
