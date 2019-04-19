@@ -12,6 +12,7 @@ using std::cerr;
 using std::cout;
 
 cpubus cb;
+cpuregs cr;
 ppubus pb;
 
 int main(int argc, char *argv[]) {
@@ -36,10 +37,13 @@ int main(int argc, char *argv[]) {
     *   Initialize PPU
     */
     if ((mmu_init(romfile) == 0)
-            && (cpu_init(cb) == 0)
+            && (cpu_init(cb, cr) == 0)
             && (ppu_init(pb) == 0)) {
 // TODO (chris#2#): CPU/APU/PPU
-// TODO (chris#3#): Memory mapped IO in CPU
+        while (true) {
+            cpu_run(cb, cr);
+        }
+// TODO (chris#3#): Memory mapped IO in CPU (PPU/APU registers)
 // TODO (chris#7#): Bus conflicts
 // TODO (chris#7#): Open bus
     } else {

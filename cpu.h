@@ -25,7 +25,7 @@ extern struct cpuregs {
     bool c = false;
     // Zero
     bool z = false;
-    // Interrupt
+    // Interrupt Disable
     bool i = true;
     // Decimal (unused)
     bool d = false;
@@ -39,6 +39,7 @@ extern struct cpuregs {
     bool n = false;
 } cpuregs_t;
 
-int cpu_init(cpubus &cb);
+int cpu_init(cpubus &cb, cpuregs &cr);
+int cpu_run(cpubus &cb, cpuregs &cr);
 
 #endif // CPU_H_INCLUDED

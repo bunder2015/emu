@@ -69,8 +69,9 @@ int cpumem_read(cpubus &cb) {
             }
 
         } else {
+// FIXME (chris#1#): Check disabled for CPU opcode testing
             cerr << "ERROR: CPU tried to read open bus, not yet implemented! (0x" << hex << cb.cpuaddrbus << ")\n";
-            return 1;
+            //return 1;
         }
 
         break;
@@ -97,7 +98,8 @@ int cpumem_write(cpubus &cb) {
             *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus;
         } else {
             cerr << "ERROR: CPU tried to write to non-writable memory! (0x" << hex << cb.cpuaddrbus << ")\n";
-            return 1;
+// FIXME (chris#1#): Check disabled for CPU opcode testing
+            //return 1;
         }
 
         break;
@@ -184,6 +186,7 @@ int ppumem_write(ppubus &pb) {
         if (pb.ppuaddrbus <= 0x1FFF) {
             // CHR ROM (pattern table)
             cerr << "ERROR: PPU tried to write to non-writable memory! (0x" << hex << pb.ppuaddrbus << ")\n";
+            return 1;
         } else if (pb.ppuaddrbus <= 0x3EFF) {
             // Console VRAM
             uint16_t offsetaddr = 0x0000;
