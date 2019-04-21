@@ -3,7 +3,7 @@
 // for ppubus
 #include "ppu.h"
 
-int ppu_init(ppubus &pb) {
+int ppu_init(ppubus &pb, ppustatus &ps) {
 // FIXME (chris#6#): Remove PPU testing code
     pb.ppuaddrbus = 0x0013;
     ppumem_read(pb);

@@ -8,6 +8,13 @@ extern struct ppubus {
     uint8_t ppudatabus = 0x00;
 } ppubus_t;
 
+extern struct ppustatus {
+    // PPUSTATUS - mapped to CPU $2002
+    bool sproverflow = false;
+    bool sprzerohit = false;
+    bool vblank = false;
+} ppustatus_t;
+
 // The NES 64 colour palette in RGB values
 const uint8_t palette[64][3] = {
     { 84,  84,  84}, {  0,  30, 116}, {  8,  16, 144}, { 48,   0, 136}, { 68,   0, 100}, { 92,   0,  48}, { 84,   4,   0}, { 60,  24,   0}, { 32,  42,   0}, {  8,  58,   0}, {  0,  64,   0}, {  0,  60,   0}, {  0,  50,  60}, {  0,   0,   0}, {  0,   0,   0}, {  0,   0,   0},
@@ -16,6 +23,8 @@ const uint8_t palette[64][3] = {
     {236, 238, 236}, {168, 204, 236}, {188, 188, 236}, {212, 178, 236}, {236, 174, 236}, {236, 174, 212}, {236, 180, 176}, {228, 196, 144}, {204, 210, 120}, {180, 222, 120}, {168, 226, 144}, {152, 226, 180}, {160, 214, 228}, {160, 162, 160}, {  0,   0,   0}, {  0,   0,   0}
 };
 
-int ppu_init(ppubus &pb);
+const uint16_t ppustatusaddr = 0x2002;
+
+int ppu_init(ppubus &pb, ppustatus &ps);
 
 #endif // PPU_H_INCLUDED

@@ -40,6 +40,6 @@ extern struct cpuregs {
 } cpuregs_t;
 
 int cpu_init(cpubus &cb, cpuregs &cr);
-int cpu_run(cpubus &cb, cpuregs &cr);
+int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun);
 
 #endif // CPU_H_INCLUDED

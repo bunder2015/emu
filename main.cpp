@@ -14,6 +14,7 @@ using std::cout;
 cpubus cb;
 cpuregs cr;
 ppubus pb;
+ppustatus ps;
 
 int main(int argc, char *argv[]) {
     // ROM filename for input
@@ -38,10 +39,11 @@ int main(int argc, char *argv[]) {
     */
     if ((mmu_init(romfile) == 0)
             && (cpu_init(cb, cr) == 0)
-            && (ppu_init(pb) == 0)) {
+            && (ppu_init(pb, ps) == 0)) {
 // TODO (chris#2#): CPU/APU/PPU
-        while (true) {
-            cpu_run(cb, cr);
+        bool canrun = true;
+        while (canrun == true) {
+            cpu_run(cb, cr, canrun);
         }
 // TODO (chris#3#): Memory mapped IO in CPU (PPU/APU registers)
 // TODO (chris#7#): Bus conflicts

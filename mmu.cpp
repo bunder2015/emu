@@ -33,55 +33,59 @@ void consoleram_init() {
 }
 
 int cpumem_read(cpubus &cb) {
-    switch (rh.mapper) {
-    case 0:
-        /*  iNES mapper 0 (aka NROM)
-        *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
-        *     32kb PRG ROM mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
-        */
-        if (cb.cpuaddrbus <= 0x1FFF) {
-            /*  If we are reading the console WRAM
-            *   put the data on the bus for the CPU to read
+    //if (cb.cpuaddrbus == 0x2002) {
+// TODO (chris#2#): Get PPU status
+    //    return 0;
+    //} else {
+        switch (rh.mapper) {
+        case 0:
+            /*  iNES mapper 0 (aka NROM)
+            *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
+            *     32kb PRG ROM mapped to CPU 0x8000 (if 16kb PRG ROM, map to 0x8000 and 0xC000)
             */
-            cb.cpudatabus = *(consolewram + (cb.cpuaddrbus % 0x800));
-        } else if (cb.cpuaddrbus >= 0x8000) {
-            if (rh.prgromsize == 32768) {
-                /*  If we are reading from cartridge ROM
-                *   and we are a 32kb PRG ROM
+            if (cb.cpuaddrbus <= 0x1FFF) {
+                /*  If we are reading the console WRAM
                 *   put the data on the bus for the CPU to read
                 */
-                cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));
-            } else {
-                // Determine whether we are using 0x8000 or 0xC000
-                uint16_t offsetaddr = cb.cpuaddrbus % 0x8000;
-                if (offsetaddr <= 0x3FFF) {
-                    /*  If we used 0x8000
-                    *   put the 0x8000 data on the bus for the CPU to read
+                cb.cpudatabus = *(consolewram + (cb.cpuaddrbus % 0x800));
+            } else if (cb.cpuaddrbus >= 0x8000) {
+                if (rh.prgromsize == 32768) {
+                    /*  If we are reading from cartridge ROM
+                    *   and we are a 32kb PRG ROM
+                    *   put the data on the bus for the CPU to read
                     */
-                    cb.cpudatabus = *(prgrom + offsetaddr);
+                    cb.cpudatabus = *(prgrom + (cb.cpuaddrbus % 0x8000));
                 } else {
-                    /*  If we used 0xC000
-                    *   put the mirrored 0x8000 data on the bus for the CPU to read
-                    */
-                    cb.cpudatabus = *(prgrom + (offsetaddr - 0x4000));
+                    // Determine whether we are using 0x8000 or 0xC000
+                    uint16_t offsetaddr = cb.cpuaddrbus % 0x8000;
+                    if (offsetaddr <= 0x3FFF) {
+                        /*  If we used 0x8000
+                        *   put the 0x8000 data on the bus for the CPU to read
+                        */
+                        cb.cpudatabus = *(prgrom + offsetaddr);
+                    } else {
+                        /*  If we used 0xC000
+                        *   put the mirrored 0x8000 data on the bus for the CPU to read
+                        */
+                        cb.cpudatabus = *(prgrom + (offsetaddr - 0x4000));
+                    }
+
                 }
 
+            } else {
+// FIXME (chris#1#): Check disabled for CPU opcode testing
+                cerr << "ERROR: CPU tried to read open bus, not yet implemented: 0x" << hex << cb.cpuaddrbus << '\n';
+                //return 1;
             }
 
-        } else {
-// FIXME (chris#1#): Check disabled for CPU opcode testing
-            cerr << "ERROR: CPU tried to read open bus, not yet implemented! (0x" << hex << cb.cpuaddrbus << ")\n";
-            //return 1;
-        }
-
-        break;
-    default:
+            break;
+        default:
 // TODO (chris#4#): More memory mappers
-        // We should never get here if mmu_init does its job
-        cerr << "ERROR: Memory mapper not yet implemented!\n";
-        return 1;
-    }
-
+            // We should never get here if mmu_init does its job
+            cerr << "ERROR: Memory mapper not yet implemented!\n";
+            return 1;
+        }
+    //}
     return 0;
 }
 
@@ -97,7 +101,7 @@ int cpumem_write(cpubus &cb) {
             */
             *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus;
         } else {
-            cerr << "ERROR: CPU tried to write to non-writable memory! (0x" << hex << cb.cpuaddrbus << ")\n";
+            cerr << "ERROR: CPU tried to write to non-writable memory: 0x" << hex << cb.cpuaddrbus << '\n';
 // FIXME (chris#1#): Check disabled for CPU opcode testing
             //return 1;
         }
@@ -165,7 +169,7 @@ int ppumem_read(ppubus &pb) {
             */
             pb.ppudatabus = *(ppupaletteram + (pb.ppuaddrbus % 0x20));
         } else {
-            cerr << "ERROR: PPU tried to read outside accessible memory! (0x" << hex << pb.ppuaddrbus << ")\n";
+            cerr << "ERROR: PPU tried to read outside accessible memory: 0x" << hex << pb.ppuaddrbus << '\n';
             return 1;
         }
 
@@ -185,7 +189,7 @@ int ppumem_write(ppubus &pb) {
     case 0:
         if (pb.ppuaddrbus <= 0x1FFF) {
             // CHR ROM (pattern table)
-            cerr << "ERROR: PPU tried to write to non-writable memory! (0x" << hex << pb.ppuaddrbus << ")\n";
+            cerr << "ERROR: PPU tried to write to non-writable memory: 0x" << hex << pb.ppuaddrbus << '\n';
             return 1;
         } else if (pb.ppuaddrbus <= 0x3EFF) {
             // Console VRAM
@@ -218,7 +222,7 @@ int ppumem_write(ppubus &pb) {
             // PPU internal palette RAM
             *(ppupaletteram + (pb.ppuaddrbus % 0x20)) = pb.ppudatabus;
         } else {
-            cerr << "ERROR: PPU tried to write outside accessible memory! (0x" << hex << pb.ppuaddrbus << ")\n";
+            cerr << "ERROR: PPU tried to write outside accessible memory: 0x" << hex << pb.ppuaddrbus << '\n';
             return 1;
         }
 
