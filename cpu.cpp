@@ -24,24 +24,34 @@ int cpu_init(cpubus &cb, cpuregs &cr) {
         cerr << "ERROR: CPU boot PC is not in PRG ROM memory!\n";
         return 1;
     } else {
+#if _DEBUG
         cout << "INFO: CPU execution will begin at 0x" << hex << cr.pc << '\n';
+#endif // _DEBUG
         return 0;
     }
 }
 
 int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
+#if _DEBUG
+    cout << "PC: " << hex << cr.pc << " ";
+#endif // _DEBUG
+
+    // Fetch the next instruction
     cb.cpuaddrbus = cr.pc;
     cpumem_read(cb);
-// TODO (chris#9#): Why doesn't std::hex like uint8_t or unsigned char
-    unsigned short opcode = cb.cpudatabus;
+    // Used to store the opcode we just fetched
+    uint8_t opcode = cb.cpudatabus;
     // Used for 2 or 3 byte instructions
-    uint8_t oplow = 0x00;
-    uint8_t ophigh = 0x00;
-    int8_t relop = 0x00;
-    // Used to check whether we need to update the CPU flags
-    bool aupdatenz = false;
-    bool xupdatenz = false;
-    bool yupdatenz = false;
+    uint8_t operand2 = 0x00;
+    uint8_t operand3 = 0x00;
+    // Signed for relative operations (branches)
+    int8_t reloperand = 0x00;
+    // Used for updating the CPU flags
+    bool updatec = false;
+    bool updatez = false;
+    bool updatev = false;
+    bool updaten = false;
+    uint8_t updateinput = 0x00;
 
     switch (opcode) {
 // TODO (chris#3#): CPU cycle accuracy
@@ -51,39 +61,141 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cerr << "ERROR: BRK occurred at 0x" << hex << cr.pc << '\n';
         canrun = false;
         break;
+    case 0x10:
+        // Opcode 50 - BPL (Branch if PLus) $nn Relative
+        cr.pc++;
+        cb.cpuaddrbus = cr.pc;
+        cpumem_read(cb);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BPL $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        if (cr.n == false) {
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
+            break;
+        } else {
+            cr.pc++;
+            break;
+        }
     case 0x18:
         // Opcode 18 - CLC (CLear Carry flag)
+#if _DEBUG
+        cout << "OP: CLC" << '\t';
+#endif // _DEBUG
         cr.c = false;
         cr.pc++;
         break;
     case 0x29:
-        // Opcode 29 - AND (bitwise AND with accumulator) $#nn Immediate
+        // Opcode 29 - AND (bitwise AND with accumulator) #$nn Immediate
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        cr.a = (cr.a & cb.cpudatabus);
-        aupdatenz = true;
+        operand2 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: AND #$" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        cr.a = (cr.a & operand2);
+        updaten = true;
+        updatez = true;
+        updateinput = cr.a;
         cr.pc++;
         break;
+    case 0x30:
+        // Opcode 30 - BMI (Branch if MInus) $nn Relative
+        cr.pc++;
+        cb.cpuaddrbus = cr.pc;
+        cpumem_read(cb);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BMI $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        if (cr.n == true) {
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
+            break;
+        } else {
+            cr.pc++;
+            break;
+        }
     case 0x38:
         // Opcode 38 - SEC (SEt Carry flag)
+#if _DEBUG
+        cout << "OP: SEC" << '\t';
+#endif // _DEBUG
         cr.c = true;
         cr.pc++;
         break;
+    case 0x50:
+        // Opcode 50 - BVC (Branch if oVerflow Clear) $nn Relative
+        cr.pc++;
+        cb.cpuaddrbus = cr.pc;
+        cpumem_read(cb);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BVC $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        if (cr.v == false) {
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
+            break;
+        } else {
+            cr.pc++;
+            break;
+        }
     case 0x58:
         // Opcode 58 - CLI (CLear Interrupt disable flag)
+#if _DEBUG
+        cout << "OP: CLI" << '\t';
+#endif // _DEBUG
         cr.i = false;
         cr.pc++;
         break;
+    case 0x70:
+        // Opcode 70 - BVS (Branch if oVerflow Set) $nn Relative
+        cr.pc++;
+        cb.cpuaddrbus = cr.pc;
+        cpumem_read(cb);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BVS $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        if (cr.v == true) {
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
+            break;
+        } else {
+            cr.pc++;
+            break;
+        }
     case 0x78:
         // Opcode 78 - SEI (SEt Interrupt disable flag)
+#if _DEBUG
+        cout << "OP: SEI" << '\t';
+#endif // _DEBUG
         cr.i = true;
         cr.pc++;
         break;
     case 0x88:
         // Opcode 88 - DEY (CEcrement Y index register)
+#if _DEBUG
+        cout << "OP: DEY" << '\t';
+#endif // _DEBUG
         cr.y--;
-        yupdatenz = true;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.y;
+        cr.pc++;
+        break;
+    case 0x8A:
+        // Opcode 8A - TXA (Transfer X index register to Accumulator)
+#if _DEBUG
+        cout << "OP: TXA" << '\t';
+#endif // _DEBUG
+        cr.a = cr.x;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.a;
         cr.pc++;
         break;
     case 0x8D:
@@ -91,20 +203,56 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        oplow = cb.cpudatabus;
+        operand2 = cb.cpudatabus;
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        ophigh = cb.cpudatabus;
-        cb.cpuaddrbus = static_cast<uint16_t> ((ophigh << 8) | oplow);
+        operand3 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: STA $" << hex << static_cast<uint16_t> ((operand3 << 8) | operand2) << '\t';
+#endif // _DEBUG
+        cb.cpuaddrbus = static_cast<uint16_t> ((operand3 << 8) | operand2);
         cb.cpudatabus = cr.a;
         cpumem_write(cb);
         cr.pc++;
         break;
+    case 0x90:
+        // Opcode 90 - BCC (Branch if Carry Clear) $nn Relative
+        cr.pc++;
+        cb.cpuaddrbus = cr.pc;
+        cpumem_read(cb);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BCC $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        if (cr.c == false) {
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
+            break;
+        } else {
+            cr.pc++;
+            break;
+        }
+    case 0x98:
+        // Opcode 98 - TYA (Transfer Y index register to Accumulator)
+#if _DEBUG
+        cout << "OP: TYA" << '\t';
+#endif // _DEBUG
+        cr.a = cr.y;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.a;
+        cr.pc++;
+        break;
     case 0x9A:
         // Opcode 9A - TXS (Transfer X index register to Stack pointer)
+#if _DEBUG
+        cout << "OP: TXS" << '\t';
+#endif // _DEBUG
         cr.sp = cr.x;
-        xupdatenz = true;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.sp;
         cr.pc++;
         break;
     case 0x9D:
@@ -112,32 +260,84 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        oplow = cb.cpudatabus;
+        operand2 = cb.cpudatabus;
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        ophigh = cb.cpudatabus;
-        cb.cpuaddrbus = static_cast<uint16_t> (((ophigh << 8) | oplow) + cr.x);
+        operand3 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: STA $" << static_cast<uint16_t> ((operand3 << 8) | operand2) << ",X" << '\t';
+#endif // _DEBUG
+        cb.cpuaddrbus = static_cast<uint16_t> (((operand3 << 8) | operand2) + cr.x);
         cb.cpudatabus = cr.a;
         cpumem_write(cb);
         cr.pc++;
         break;
-    case 0xA2:
-        // Opcode A2 - LDX (LoaD X index register) $#nn Immediate
+    case 0xA0:
+        // Opcode A0 - LDY (LoaD Y index register) #$nn Immediate
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        cr.x = cb.cpudatabus;
-        xupdatenz = true;
+        operand2 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: LDY #$" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        cr.y = operand2;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.y;
+        cr.pc++;
+        break;
+    case 0xA2:
+        // Opcode A2 - LDX (LoaD X index register) #$nn Immediate
+        cr.pc++;
+        cb.cpuaddrbus = cr.pc;
+        cpumem_read(cb);
+        operand2 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: LDX #$" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        cr.x = operand2;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.x;
+        cr.pc++;
+        break;
+    case 0xA8:
+        // Opcode A8 - TAY (Transfer Accumulator to Y index register)
+#if _DEBUG
+        cout << "OP: TAY" << '\t';
+#endif // _DEBUG
+        cr.y = cr.a;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.y;
         cr.pc++;
         break;
     case 0xA9:
-        // Opcode A9 - LDA (LoaD Accumulator) $#nn Immediate
+        // Opcode A9 - LDA (LoaD Accumulator) #$nn Immediate
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        cr.a = cb.cpudatabus;
-        aupdatenz = true;
+        operand2 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: LDA #$" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        cr.a = operand2;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.a;
+        cr.pc++;
+        break;
+    case 0xAA:
+        // Opcode AA - TAX (Transfer Accumulator to X index register)
+#if _DEBUG
+        cout << "OP: TAX" << '\t';
+#endif // _DEBUG
+        cr.x = cr.a;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.x;
         cr.pc++;
         break;
     case 0xAD:
@@ -145,41 +345,92 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        oplow = cb.cpudatabus;
+        operand2 = cb.cpudatabus;
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        ophigh = cb.cpudatabus;
-        cb.cpuaddrbus = static_cast<uint16_t> ((ophigh << 8) | oplow);
+        operand3 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: LDA $" << hex << static_cast<uint16_t> ((operand3 << 8) | operand2) << '\t';
+#endif // _DEBUG
+        cb.cpuaddrbus = static_cast<uint16_t> ((operand3 << 8) | operand2);
         cpumem_read(cb);
         cr.a = cb.cpudatabus;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.a;
+        cr.pc++;
+        break;
+    case 0xB0:
+        // Opcode B0 - BCS (Branch if Carry Set) $nn Relative
+        cr.pc++;
+        cb.cpuaddrbus = cr.pc;
+        cpumem_read(cb);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BCS $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
+        if (cr.c == true) {
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
+            break;
+        } else {
+            cr.pc++;
+            break;
+        }
+    case 0xBA:
+        // Opcode BA - TSX (Transfer Stack pointer to X index register)
+#if _DEBUG
+        cout << "OP: TSX" << '\t';
+#endif // _DEBUG
+        cr.x = cr.sp;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.x;
         cr.pc++;
         break;
     case 0xB8:
         // Opcode B8 - CLV (CLear oVerflow flag)
+#if _DEBUG
+        cout << "OP: CLV" << '\t';
+#endif // _DEBUG
         cr.v = false;
         cr.pc++;
         break;
     case 0xCA:
         // Opcode CA - DEX (CEcrement X index register)
+#if _DEBUG
+        cout << "OP: DEX" << '\t';
+#endif // _DEBUG
         cr.x--;
-        xupdatenz = true;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.x;
         cr.pc++;
         break;
     case 0xC8:
         // Opcode C8 - INY (INcrement Y index register)
+#if _DEBUG
+        cout << "OP: INY" << '\t';
+#endif // _DEBUG
         cr.y++;
-        yupdatenz = true;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.y;
         cr.pc++;
         break;
     case 0xD0:
-        // Opcode D0 - BNE (Branch Not Equal) $nn Relative
+        // Opcode D0 - BNE (Branch if Not Equal) $nn Relative
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        relop = static_cast<int8_t> (cb.cpudatabus);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BNE $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
         if (cr.z == false) {
-            cr.pc = static_cast<uint16_t> (cr.pc + relop);
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
             break;
         } else {
             cr.pc++;
@@ -187,17 +438,28 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         }
     case 0xD8:
         // Opcode D8 - CLD (CLear Decimal flag)
+#if _DEBUG
+        cout << "OP: CLD" << '\t';
+#endif // _DEBUG
         cr.d = false;
         cr.pc++;
         break;
     case 0xE8:
         // Opcode E8 - INX (INcrement X index register)
+#if _DEBUG
+        cout << "OP: INX" << '\t';
+#endif // _DEBUG
         cr.x++;
-        xupdatenz = true;
+        updaten = true;
+        updatez = true;
+        updateinput = cr.x;
         cr.pc++;
         break;
     case 0xEA:
         // Opcode EA - NOP (No OPeration)
+#if _DEBUG
+        cout << "OP: NOP" << '\t';
+#endif // _DEBUG
         cr.pc++;
         break;
     case 0xF0:
@@ -205,9 +467,13 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cr.pc++;
         cb.cpuaddrbus = cr.pc;
         cpumem_read(cb);
-        relop = static_cast<int8_t> (cb.cpudatabus);
+        reloperand = static_cast<int8_t> (cb.cpudatabus);
+#if _DEBUG
+        operand2 = cb.cpudatabus;
+        cout << "OP: BEQ $" << hex << static_cast<uint16_t> (operand2) << '\t';
+#endif // _DEBUG
         if (cr.z == true) {
-            cr.pc = static_cast<uint16_t> (cr.pc + relop);
+            cr.pc = static_cast<uint16_t> (cr.pc + reloperand);
             break;
         } else {
             cr.pc++;
@@ -215,6 +481,9 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         }
     case 0xF8:
         // Opcode F8 - SED (SEt Decimal flag)
+#if _DEBUG
+        cout << "OP: SED" << '\t';
+#endif // _DEBUG
         cr.d = true;
         cr.pc++;
         break;
@@ -236,54 +505,38 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
     case 0xD2: case 0xD3: case 0xD4: case 0xD7: case 0xDA: case 0xDB: case 0xDC: case 0xDF:
     case 0xE2: case 0xE3: case 0xE7: case 0xEB: case 0xEF:
     case 0xF2: case 0xF3: case 0xF4: case 0xF7: case 0xFA: case 0xFB: case 0xFC: case 0xFF:
-        cerr << "ERROR: CPU opcode at 0x" << hex << cb.cpuaddrbus << " does not exist: " << hex << opcode << '\n';
+        cerr << "ERROR: CPU opcode at 0x" << hex << cb.cpuaddrbus << " does not exist: " << hex << static_cast<uint16_t>(opcode) << '\n';
         canrun = false;
         return 1;
     default:
 // TODO (chris#2#): More CPU opcodes, remove giant case case case block above
-        cerr << "ERROR: CPU opcode at 0x" << hex << cb.cpuaddrbus << " not yet implemented: " << hex << opcode << '\n';
+        cerr << "ERROR: CPU opcode at 0x" << hex << cb.cpuaddrbus << " not yet implemented: " << hex << static_cast<uint16_t> (opcode) << '\n';
         canrun = false;
         return 1;
     }
 
     // CPU flag update routine
-    if (aupdatenz == true) {
-        if (cr.a > 0x7F) {
-            cr.n = true;
-        } else {
-            cr.n = false;
-        }
-
-        if (cr.a == 0x00) {
+    if (updatez == true) {
+        if (updateinput == 0x00) {
             cr.z = true;
         } else {
             cr.z = false;
         }
-    } else if (xupdatenz == true) {
-        if (cr.x > 0x7F) {
+    } else if (updaten == true) {
+        if (updateinput >= 0x80) {
             cr.n = true;
         } else {
             cr.n = false;
-        }
-
-        if (cr.x == 0x00) {
-            cr.z = true;
-        } else {
-            cr.z = false;
-        }
-    } else if (yupdatenz == true) {
-        if (cr.y > 0x7F) {
-            cr.n = true;
-        } else {
-            cr.n = false;
-        }
-
-        if (cr.y == 0x00) {
-            cr.z = true;
-        } else {
-            cr.z = false;
         }
     }
+
+#if _DEBUG
+        cout << "\tA: " << hex << static_cast<uint16_t> (cr.a) << \
+        "\tX: " << hex << static_cast<uint16_t> (cr.x) << \
+        "\tY: " << hex << static_cast<uint16_t> (cr.y) << \
+        "\tSP: " << hex << static_cast<uint16_t> (cr.sp) << \
+        "\tNVUBDIZC: " << cr.n << cr.v << cr.u << cr.b << cr.d << cr.i << cr.z << cr.c << '\n';
+#endif // _DEBUG
 
     return 0;
 }
