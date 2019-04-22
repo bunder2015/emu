@@ -32,7 +32,7 @@ void consoleram_init() {
     fill (ppuoamram, (ppuoamram + 0x100), 0xFF);
 }
 
-int cpumem_read(cpubus &cb) {
+int mem_cpuread(cpubus &cb) {
     //if (cb.cpuaddrbus == 0x2002) {
 // TODO (chris#2#): Get PPU status
     //    return 0;
@@ -89,7 +89,7 @@ int cpumem_read(cpubus &cb) {
     return 0;
 }
 
-int cpumem_write(cpubus &cb) {
+int mem_cpuwrite(cpubus &cb) {
     switch (rh.mapper) {
     case 0:
         /*  iNES mapper 0 (aka NROM)
@@ -117,7 +117,7 @@ int cpumem_write(cpubus &cb) {
     return 0;
 }
 
-int ppumem_read(ppubus &pb) {
+int mem_ppuread(ppubus &pb) {
     switch (rh.mapper) {
     case 0:
         /*  iNES mapper 0 (aka NROM)
@@ -184,7 +184,7 @@ int ppumem_read(ppubus &pb) {
     return 0;
 }
 
-int ppumem_write(ppubus &pb) {
+int mem_ppuwrite(ppubus &pb) {
     switch (rh.mapper) {
     case 0:
         if (pb.ppuaddrbus <= 0x1FFF) {

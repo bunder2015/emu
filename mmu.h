@@ -6,10 +6,10 @@
 // for ppubus
 #include "ppu.h"
 
-int cpumem_read(cpubus &cb);
-int cpumem_write(cpubus &cb);
-int ppumem_read(ppubus &pb);
-int ppumem_write(ppubus &pb);
+int mem_cpuread(cpubus &cb);
+int mem_cpuwrite(cpubus &cb);
+int mem_ppuread(ppubus &pb);
+int mem_ppuwrite(ppubus &pb);
 int mmu_init(char *romfile);
 
 #endif // MMU_H_INCLUDED
