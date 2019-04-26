@@ -70,16 +70,16 @@ uint8_t cpu_getflagsint(cpuregs &cr) {
 }
 
 void cpu_setflagsfromint(cpuregs &cr, uint8_t updateinput) {
-    cr.c = (updateinput & 0x1);
-    cr.z = ((updateinput >> 1) & 0x1);
-    cr.i = ((updateinput >> 2) & 0x1);
-    cr.d = ((updateinput >> 3) & 0x1);
+    cr.c = (updateinput & 0b00000001);
+    cr.z = ((updateinput >> 1) & 0b00000001);
+    cr.i = ((updateinput >> 2) & 0b00000001);
+    cr.d = ((updateinput >> 3) & 0b00000001);
     // The B flag can not be set externally
-    //cr.b = ((updateinput >> 4) & 0x1);
+    //cr.b = ((updateinput >> 4) & 0b00000001);
     // The U flag can not be set externally
-    //cr.u = ((updateinput >> 5) & 0x1);
-    cr.v = ((updateinput >> 6) & 0x1);
-    cr.n = ((updateinput >> 7) & 0x1);
+    //cr.u = ((updateinput >> 5) & 0b00000001);
+    cr.v = ((updateinput >> 6) & 0b00000001);
+    cr.n = ((updateinput >> 7) & 0b00000001);
 }
 
 int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
@@ -339,6 +339,7 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         updaten = true;
         updatez = true;
         updateinput = cr.a;
+        cpu_updateflags(updaten, updatez, cr, updateinput);
         cr.pc++;
         break;
     case 0x6C:
