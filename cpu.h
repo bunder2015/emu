@@ -24,14 +24,14 @@ extern struct cpuregs {
     // Carry
     bool c = false;
     // Zero
-    bool z = false;
+    bool z = true;
     // Interrupt Disable
     bool i = true;
-    // Decimal (unused)
+    // Decimal (unused on 2A03)
     bool d = false;
-    // Breakpoint (unused)
+    // Breakpoint (pseudo-unused, when written to stack: low on IRQ/NMI, high on BRK/PHP)
     bool b = true;
-    // Unused
+    // Unused on all 6502, always high
     bool u = true;
     // Overflow
     bool v = false;

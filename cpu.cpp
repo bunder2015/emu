@@ -56,29 +56,53 @@ void cpu_updateflags(bool updaten, bool updatez, cpuregs &cr, uint8_t updateinpu
     }
 }
 
-int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
-#if _DEBUG
-    cout << "PC: " << hex << cr.pc << " ";
-#endif // _DEBUG
+uint8_t cpu_getflagsint(cpuregs &cr) {
+    uint8_t flagsint = static_cast<uint8_t> ((
+                  (cr.n << 7)
+                | (cr.v << 6)
+                | (cr.u << 5)
+                | (cr.b << 4)
+                | (cr.d << 3)
+                | (cr.i << 2)
+                | (cr.z << 1)
+                | (cr.c) ));
+    return flagsint;
+}
 
-    // Fetch the next instruction
-    cb.cpuaddrbus = cr.pc;
-    mem_cpuread(cb);
-    // Used to store the opcode we just fetched
-    uint8_t opcode = cb.cpudatabus;
+void cpu_setflagsfromint(cpuregs &cr, uint8_t updateinput) {
+    cr.c = (updateinput & 0x1);
+    cr.z = ((updateinput >> 1) & 0x1);
+    cr.i = ((updateinput >> 2) & 0x1);
+    cr.d = ((updateinput >> 3) & 0x1);
+    // The B flag can not be set externally
+    //cr.b = ((updateinput >> 4) & 0x1);
+    // The U flag can not be set externally
+    //cr.u = ((updateinput >> 5) & 0x1);
+    cr.v = ((updateinput >> 6) & 0x1);
+    cr.n = ((updateinput >> 7) & 0x1);
+}
+
+int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
     // Used for multibyte and multiple operation instructions
     uint8_t operand2 = 0x00;
     uint8_t operand3 = 0x00;
     uint8_t operand4 = 0x00;
     uint8_t operand5 = 0x00;
-    // Signed for relative operations (branches)
+    // Signed for relative operation instructions (branches)
     int8_t reloperand = 0x00;
     // Used for updating the CPU flags
-    bool updatec = false;
     bool updatez = false;
-    bool updatev = false;
     bool updaten = false;
     uint8_t updateinput = 0x00;
+
+#if _DEBUG
+    cout << "PC: " << hex << cr.pc << " ";
+#endif // _DEBUG
+    // Fetch the next instruction
+    cb.cpuaddrbus = cr.pc;
+    mem_cpuread(cb);
+    // Used to store the opcode we just fetched
+    uint8_t opcode = cb.cpudatabus;
 
     switch (opcode) {
 // TODO (chris#3#): CPU cycle accuracy
@@ -88,11 +112,65 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
 #if _DEBUG
         cout << "OP: BRK" << '\t';
 #endif // _DEBUG
-        canrun = false;
         cerr << "ERROR: BRK occurred at 0x" << hex << cr.pc << '\n';
+        /*
+        *   cr.pc++;
+        *   cr.pc++;
+        *   cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        *   cb.cpudatabus = cr.pc;
+        *   mem_cpuwrite(cb);
+        *   cr.sp--;
+        *   cb.cpuaddrbus++;
+        *   cb.cpudatabus = (cr.pc >> 8);
+        *   mem_cpuwrite(cb);
+        *   cr.sp--;
+        *   operand4 = cpu_getflagsint(cr);
+        *   cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        *   cb.cpudatabus = operand4;
+        *   mem_cpuwrite(cb);
+        *   cr.sp--;
+        *   cr.i = true;
+        *   cb.cpuaddrbus = 0xFFFE;
+        *   mem_cpuread(cb);
+        *   operand4 = cb.cpudatabus;
+        *   cb.cpuaddrbus++;
+        *   mem_cpuread(cb);
+        *   operand5 = cb.cpudatabus;
+        *   cr.pc = static_cast<uint16_t> ((operand5 << 8) | operand4);
+        */
+        canrun = false;
+        break;
+    case 0x08:
+        // Opcode 08 - PHP (PusH Processor status to stack)
+#if _DEBUG
+        cout << "OP: PHP" << '\t';
+#endif // _DEBUG
+        operand4 = cpu_getflagsint(cr);
+        cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        cb.cpudatabus = operand4;
+        mem_cpuwrite(cb);
+        cr.sp--;
+        cr.pc++;
+        break;
+    case 0x0A:
+        // Opcode 0A - ASL (Arithmetic Shift Left) Accumulator
+#if _DEBUG
+        cout << "OP: ASL A" << '\t';
+#endif // _DEBUG
+        if (cr.a >= 0x80) {
+            cr.c = true;
+        } else {
+            cr.c = false;
+        }
+        cr.a = static_cast<uint8_t> (cr.a << 1);
+        updaten = true;
+        updatez = true;
+        updateinput = cr.a;
+        cpu_updateflags(updaten, updatez, cr, updateinput);
+        cr.pc++;
         break;
     case 0x10:
-        // Opcode 50 - BPL (Branch if PLus) $nn Relative
+        // Opcode 10 - BPL (Branch if PLus) $nn Relative
         cpu_fetchnext(cb, cr);
         reloperand = static_cast<int8_t> (cb.cpudatabus);
 #if _DEBUG
@@ -113,6 +191,39 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cout << "OP: CLC" << '\t';
 #endif // _DEBUG
         cr.c = false;
+        cr.pc++;
+        break;
+    case 0x20:
+        // Opcode 20 - JSR (Jump to SubRoutine) Absolute
+        cpu_fetchnext(cb, cr);
+        operand2 = cb.cpudatabus;
+        cpu_fetchnext(cb, cr);
+        operand3 = cb.cpudatabus;
+#if _DEBUG
+        cout << "OP: JSR $" << hex << static_cast<uint16_t> ((operand3 << 8) | operand2) << '\t';
+#endif // _DEBUG
+        operand4 = static_cast<uint8_t> (cr.pc);
+        cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        cb.cpudatabus = operand4;
+        mem_cpuwrite(cb);
+        cr.sp--;
+        operand5 = static_cast<uint8_t> (cr.pc >> 8);
+        cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        cb.cpudatabus = operand5;
+        mem_cpuwrite(cb);
+        cr.sp--;
+        cr.pc = static_cast<uint16_t> ((operand3 << 8) | operand2);
+        break;
+    case 0x28:
+        // Opcode 28 - PLP (PulL Processor status from stack)
+#if _DEBUG
+        cout << "OP: PLP" << '\t';
+#endif // _DEBUG
+        cr.sp++;
+        cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        mem_cpuread(cb);
+        updateinput = cb.cpudatabus;
+        cpu_setflagsfromint(cr, updateinput);
         cr.pc++;
         break;
     case 0x29:
@@ -164,6 +275,23 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cr.sp--;
         cr.pc++;
         break;
+    case 0x4A:
+        // Opcode 4A - LSR (Logical Shift Right) Accumulator
+#if _DEBUG
+        cout << "OP: LSR A" << '\t';
+#endif // _DEBUG
+        if ((cr.a & 0b00000001) == 0x01) {
+            cr.c = true;
+        } else {
+            cr.c = false;
+        }
+        cr.a = static_cast<uint8_t> (cr.a >> 1);
+        updaten = true;
+        updatez = true;
+        updateinput = cr.a;
+        cpu_updateflags(updaten, updatez, cr, updateinput);
+        cr.pc++;
+        break;
     case 0x4C:
         // Opcode 4C - JMP (JuMP) $nnnn Absolute
         cpu_fetchnext(cb, cr);
@@ -204,10 +332,10 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
 #if _DEBUG
         cout << "OP: PLA" << '\t';
 #endif // _DEBUG
-        cb.cpuaddrbus = static_cast<uint16_t> ((0x0100 | cr.sp) + 1);
+        cr.sp++;
+        cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
         mem_cpuread(cb);
         cr.a = cb.cpudatabus;
-        cr.sp++;
         updaten = true;
         updatez = true;
         updateinput = cr.a;
@@ -856,6 +984,7 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
 #if _DEBUG
         cout << "OP: SED" << '\t';
 #endif // _DEBUG
+        cerr << "WARN: SED operation detected.  The 2A03 does not support 6502 decimal mode.\n";
         cr.d = true;
         cr.pc++;
         break;
