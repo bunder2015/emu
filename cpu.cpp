@@ -112,7 +112,6 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
 #if _DEBUG
         cout << "OP: BRK" << '\t';
 #endif // _DEBUG
-        cerr << "ERROR: BRK occurred at 0x" << hex << cr.pc << '\n';
         /*
         *   cr.pc++;
         *   cr.pc++;
@@ -138,6 +137,7 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         *   operand5 = cb.cpudatabus;
         *   cr.pc = static_cast<uint16_t> ((operand5 << 8) | operand4);
         */
+        cerr << "ERROR: BRK occurred at 0x" << hex << cr.pc << '\n';
         canrun = false;
         break;
     case 0x08:
@@ -224,6 +224,9 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         mem_cpuread(cb);
         updateinput = cb.cpudatabus;
         cpu_setflagsfromint(cr, updateinput);
+        if (cr.d == true) {
+            cerr << "WARN: PLP tried to enable decimal mode.  The 2A03/2A07 does not support the 6502 decimal mode.\n";
+        }
         cr.pc++;
         break;
     case 0x29:
@@ -325,6 +328,22 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
         cout << "OP: CLI" << '\t';
 #endif // _DEBUG
         cr.i = false;
+        cr.pc++;
+        break;
+    case 0x60:
+        // Opcode 60 - RTS (ReTurn from Subroutine)
+#if _DEBUG
+        cout << "OP: RTS" << '\t';
+#endif // _DEBUG
+        cr.sp++;
+        cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        mem_cpuread(cb);
+        operand4 = cb.cpudatabus;
+        cr.sp++;
+        cb.cpuaddrbus = static_cast<uint16_t> (0x0100 | cr.sp);
+        mem_cpuread(cb);
+        operand5 = cb.cpudatabus;
+        cr.pc = static_cast<uint16_t> ((operand4 << 8) | operand5);
         cr.pc++;
         break;
     case 0x68:
@@ -985,8 +1004,8 @@ int cpu_run(cpubus &cb, cpuregs &cr, bool &canrun) {
 #if _DEBUG
         cout << "OP: SED" << '\t';
 #endif // _DEBUG
-        cerr << "WARN: SED operation detected.  The 2A03 does not support 6502 decimal mode.\n";
         cr.d = true;
+        cerr << "WARN: SED tried to enable decimal mode.  The 2A03/2A07 does not support the 6502 decimal mode.\n";
         cr.pc++;
         break;
 

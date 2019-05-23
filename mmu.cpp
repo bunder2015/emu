@@ -33,10 +33,70 @@ void consoleram_init() {
 }
 
 int mem_cpuread(cpubus &cb) {
-    //if (cb.cpuaddrbus == 0x2002) {
-// TODO (chris#2#): Get PPU status
-    //    return 0;
-    //} else {
+    switch (cb.cpuaddrbus) {
+// TODO (chris#4#): PPU/APU registers
+    case 0x2000:
+        // PPUCTRL
+    case 0x2001:
+        // PPUMASK
+    case 0x2002:
+        // PPUSTATUS
+    case 0x2003:
+        // OAMADDR
+    case 0x2004:
+        // OAMDATA
+    case 0x2005:
+        // PPUSCROLL
+    case 0x2006:
+        // PPUADDR
+    case 0x2007:
+        // PPUDATA
+    case 0x4000:
+        // SQ1VOL
+    case 0x4001:
+        // SQ1SWEEP
+    case 0x4002:
+        // SQ1LOW
+    case 0x4003:
+        // SQ1HIGH
+    case 0x4004:
+        // SQ2VOL
+    case 0x4005:
+        // SQ2SWEEP
+    case 0x4006:
+        // SQ2LOW
+    case 0x4007:
+        // SQ2HIGH
+    case 0x4008:
+        // TRILINEAR
+    case 0x400A:
+        // TRILOW
+    case 0x400B:
+        // TRIHIGH
+    case 0x400C:
+        // NOISEVOL
+    case 0x400E:
+        // NOISELOW
+    case 0x400F:
+        // NOISEHIGH
+    case 0x4010:
+        // DMCFREQ
+    case 0x4011:
+        // DMCRAW
+    case 0x4012:
+        // DMCSTART
+    case 0x4013:
+        // DMCLENGTH
+    case 0x4014:
+        // OAMDMA
+    case 0x4015:
+        // SNDCHAN
+    case 0x4016:
+        // JOY1/STROBE
+    case 0x4017:
+        // JOY2/APUFRAME
+        break;
+    default:
         switch (rh.mapper) {
         case 0:
             /*  iNES mapper 0 (aka NROM)
@@ -73,9 +133,8 @@ int mem_cpuread(cpubus &cb) {
                 }
 
             } else {
-// FIXME (chris#1#): Check disabled for CPU opcode testing
                 cerr << "ERROR: CPU tried to read open bus, not yet implemented: 0x" << hex << cb.cpuaddrbus << '\n';
-                //return 1;
+                return 1;
             }
 
             break;
@@ -85,35 +144,98 @@ int mem_cpuread(cpubus &cb) {
             cerr << "ERROR: Memory mapper not yet implemented!\n";
             return 1;
         }
-    //}
+    }
     return 0;
 }
 
 int mem_cpuwrite(cpubus &cb) {
-    switch (rh.mapper) {
-    case 0:
-        /*  iNES mapper 0 (aka NROM)
-        *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
-        */
-        if (cb.cpuaddrbus <= 0x1FFF) {
-            /*  If we are writing to console WRAM
-            *   take the data off the bus and write it to the memory block
-            */
-            *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus;
-        } else {
-            cerr << "ERROR: CPU tried to write to non-writable memory: 0x" << hex << cb.cpuaddrbus << '\n';
-// FIXME (chris#1#): Check disabled for CPU opcode testing
-            //return 1;
-        }
-
+    switch (cb.cpuaddrbus) {
+// TODO (chris#4#): PPU/APU registers
+    case 0x2000:
+        // PPUCTRL
+    case 0x2001:
+        // PPUMASK
+    case 0x2002:
+        // PPUSTATUS
+    case 0x2003:
+        // OAMADDR
+    case 0x2004:
+        // OAMDATA
+    case 0x2005:
+        // PPUSCROLL
+    case 0x2006:
+        // PPUADDR
+    case 0x2007:
+        // PPUDATA
+    case 0x4000:
+        // SQ1VOL
+    case 0x4001:
+        // SQ1SWEEP
+    case 0x4002:
+        // SQ1LOW
+    case 0x4003:
+        // SQ1HIGH
+    case 0x4004:
+        // SQ2VOL
+    case 0x4005:
+        // SQ2SWEEP
+    case 0x4006:
+        // SQ2LOW
+    case 0x4007:
+        // SQ2HIGH
+    case 0x4008:
+        // TRILINEAR
+    case 0x400A:
+        // TRILOW
+    case 0x400B:
+        // TRIHIGH
+    case 0x400C:
+        // NOISEVOL
+    case 0x400E:
+        // NOISELOW
+    case 0x400F:
+        // NOISEHIGH
+    case 0x4010:
+        // DMCFREQ
+    case 0x4011:
+        // DMCRAW
+    case 0x4012:
+        // DMCSTART
+    case 0x4013:
+        // DMCLENGTH
+    case 0x4014:
+        // OAMDMA
+    case 0x4015:
+        // SNDCHAN
+    case 0x4016:
+        // JOY1/STROBE
+    case 0x4017:
+        // JOY2/APUFRAME
         break;
     default:
-// TODO (chris#4#): More memory mappers
-        // We should never get here if mmu_init does its job
-        cerr << "ERROR: Memory mapper not yet implemented!\n";
-        return 1;
-    }
+        switch (rh.mapper) {
+        case 0:
+            /*  iNES mapper 0 (aka NROM)
+            *     2kb console WRAM mapped to CPU 0x0000, 0x800, 0x1000, 0x1800
+            */
+            if (cb.cpuaddrbus <= 0x1FFF) {
+                /*  If we are writing to console WRAM
+                *   take the data off the bus and write it to the memory block
+                */
+                *(consolewram + (cb.cpuaddrbus % 0x800)) = cb.cpudatabus;
+            } else {
+                cerr << "ERROR: CPU tried to write to non-writable memory: 0x" << hex << cb.cpuaddrbus << '\n';
+                return 1;
+            }
 
+            break;
+        default:
+    // TODO (chris#4#): More memory mappers
+            // We should never get here if mmu_init does its job
+            cerr << "ERROR: Memory mapper not yet implemented!\n";
+            return 1;
+        }
+    }
     return 0;
 }
 
