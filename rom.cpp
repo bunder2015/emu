@@ -136,20 +136,12 @@ int rom_headerparse(romheader &rh) {
                 return 1;
             }
 
-            if (((*(rh.rombuffer + 6) & 0b00000010) == 0b00000010)
-                    && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00010000)) {
+            if ((*(rh.rombuffer + 6) & 0b00000010) == 0b00000010) {
                 /*  If byte 6, bit 2 is 1
-                *   and byte 10, bit 16 is 1
                 *   we have a battery
                 */
                 rh.batterypresent = true;
-                cout << "INFO: Battery backed PRG RAM present\n";
-            } else if (((*(rh.rombuffer + 6) & 0b00000010) == 0b00000000)
-                       && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00000000)) {
-                rh.batterypresent = false;
-            } else {
-                cerr << "ERROR: Battery presence mismatch, fix header bytes 6 and 10!\n";
-                return 1;
+                cout << "INFO: Battery present\n";
             }
 
             /* TODO (chris#9#): Fix bad ROMs
@@ -171,7 +163,8 @@ int rom_headerparse(romheader &rh) {
             // PRG RAM is byte 8 * 8kb in size
             rh.prgramsize = static_cast <uint32_t> ((*(rh.rombuffer + 8) & 0b11111111) * 8192);
 
-            if (rh.prgramsize > 0) {
+            if ((rh.prgramsize > 0)
+                && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00010000)) {
                 cout << "INFO: PRG RAM size: " << rh.prgramsize << " bytes total\n";
             } else {
                 if ((rh.batterypresent == true)
@@ -184,7 +177,16 @@ int rom_headerparse(romheader &rh) {
                     return 1;
                 }
 
-                // There is no way to know if we need a PRG RAM without the battery bit
+                if ((rh.prgramsize == 0)
+                    && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00010000)) {
+                    cerr << "ERROR: PRG RAM size without presence, fix header byte 8!\n";
+                    return 1;
+                } else if ((rh.prgramsize > 0)
+                    && ((*(rh.rombuffer + 10) & 0b00010000) == 0b00000000)) {
+                    cerr << "ERROR: PRG RAM presence without size, fix header byte 10!\n";
+                    return 1;
+                }
+
                 cout << "INFO: No PRG RAM present\n";
             }
 

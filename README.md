@@ -21,11 +21,10 @@ Common issues include:
 - Oversized/undersized ROMs
 - Headers with non-compliant garbage in unused/reserved areas of bytes 9 
 through 15
-- Battery bit set without setting PRG RAM size
-- Battery bit being set in byte 6 and not byte 10 (or vice-versa)
+- PRG RAM size being set in byte 8 without setting PRG RAM presence in byte 10
+- Battery bit being set in byte 6 without setting PRG RAM size or presence
 - NTSC/PAL bit being set in byte 9 and not byte 10 (or vice-versa)
 
-It may seem redundant to require both bits set for battery and NTSC/PAL but 
-requiring both rules out whether a ROM really needs it or not since both 
-options have two bits where the toggle could take place.
-
+It may seem redundant to require both bits set for and NTSC/PAL but 
+requiring both rules out whether a ROM really needs it or not since the 
+option has two bits where the toggle could take place.
